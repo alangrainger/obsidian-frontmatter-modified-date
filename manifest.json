@@ -1,0 +1,11 @@
+{
+	"id": "frontmatter-modified-date",
+	"name": "Update frontmatter modified date",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Automatically update a frontmatter modified date field",
+	"author": "Alan Grainger",
+	"authorUrl": "https://obsidian.md",
+	"fundingUrl": "https://obsidian.md/pricing",
+	"isDesktopOnly": false
+}
