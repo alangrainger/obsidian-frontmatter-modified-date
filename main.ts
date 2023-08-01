@@ -59,10 +59,12 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
     const { containerEl } = this
 
     containerEl.empty()
+    containerEl.createEl('h2', {text: 'Update modified date settings'})
 
     // Frontmatter property setting
     new Setting(containerEl)
       .setName('Frontmatter property')
+      .setDesc('The name of the YAML/frontmatter property to update')
       .addText(text => text
         .setPlaceholder('modified')
         .setValue(this.plugin.settings.frontmatterProperty)
@@ -74,9 +76,9 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
     // Date format setting
     new Setting(containerEl)
       .setName('Date format')
-      .setDesc('This is in MomentJS format')
+      .setDesc('This is in MomentJS format. Leave blank for the default ATOM format.')
       .addText(text => text
-        .setPlaceholder('Leave blank for default ATOM format')
+        .setPlaceholder('ATOM format')
         .setValue(this.plugin.settings.momentFormat)
         .onChange(async (value) => {
           this.plugin.settings.momentFormat = value
