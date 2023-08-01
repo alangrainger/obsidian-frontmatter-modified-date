@@ -1,7 +1,7 @@
 {
 	"id": "frontmatter-modified-date",
 	"name": "Update frontmatter modified date",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Automatically update a frontmatter modified date field",
 	"author": "Alan Grainger",

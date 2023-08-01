@@ -1,4 +1,4 @@
-import { Plugin, PluginSettingTab, Setting, TFile, moment } from 'obsidian'
+import { App, Plugin, PluginSettingTab, Setting, TFile, moment } from 'obsidian'
 
 interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
@@ -12,16 +12,27 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
+  timer: NodeJS.Timeout
 
   async onload () {
     await this.loadSettings()
 
     this.registerEvent(this.app.vault.on('modify', (file) => {
-      if (file instanceof TFile) {
-        this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-          frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
-        })
-      }
+      /*
+      Use a timeout to update the metadata only once the user has stopped typing.
+      If the user keeps typing, then it will reset the timeout and start again from zero.
+
+      Obsidian doesn't appear to correctly handle this situation otherwise, and pops an
+      error to say "<File> has been modified externally, merging changes automatically."
+       */
+      clearTimeout(this.timer)
+      this.timer = setTimeout(() => {
+        if (file instanceof TFile) {
+          this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+            frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
+          })
+        }
+      }, 15 * 1000)
     }))
 
     this.addSettingTab(new FrontmatterModifiedSettingTab(this.app, this))
@@ -47,31 +58,29 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
   display (): void {
     const { containerEl } = this
 
-    containerEl.empty();
+    containerEl.empty()
 
-    [{
-      name: 'Frontmatter property',
-      description: '',
-      placeholder: 'modified',
-      field: 'frontmatterProperty'
-    },
-      {
-        name: 'Date format',
-        description: 'This is in MomentJS format',
-        placeholder: 'Leave blank for default ATOM format',
-        field: 'momentFormat'
-      }]
-      .forEach(setting => {
-        new Setting(containerEl)
-          .setName(setting.name)
-          .setDesc(setting.description)
-          .addText(text => text
-            .setPlaceholder(setting.placeholder)
-            .setValue(this.plugin.settings[setting.field])
-            .onChange(async (value) => {
-              this.plugin.settings[setting.field] = value
-              await this.plugin.saveSettings()
-            }))
-      })
+    // Frontmatter property setting
+    new Setting(containerEl)
+      .setName('Frontmatter property')
+      .addText(text => text
+        .setPlaceholder('modified')
+        .setValue(this.plugin.settings.frontmatterProperty)
+        .onChange(async (value) => {
+          this.plugin.settings.frontmatterProperty = value
+          await this.plugin.saveSettings()
+        }))
+
+    // Date format setting
+    new Setting(containerEl)
+      .setName('Date format')
+      .setDesc('This is in MomentJS format')
+      .addText(text => text
+        .setPlaceholder('Leave blank for default ATOM format')
+        .setValue(this.plugin.settings.momentFormat)
+        .onChange(async (value) => {
+          this.plugin.settings.momentFormat = value
+          await this.plugin.saveSettings()
+        }))
   }
 }
