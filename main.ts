@@ -3,16 +3,18 @@ import { App, Plugin, PluginSettingTab, Setting, TFile, moment } from 'obsidian'
 interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
   momentFormat: string;
+  excludedFolders: string[];
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   frontmatterProperty: 'modified',
-  momentFormat: ''
+  momentFormat: '',
+  excludedFolders: []
 }
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
-  timer: NodeJS.Timeout
+  timer: { [key: string]: NodeJS.Timeout } = {}
 
   async onload () {
     await this.loadSettings()
@@ -24,15 +26,15 @@ export default class FrontmatterModified extends Plugin {
 
       Obsidian doesn't appear to correctly handle this situation otherwise, and pops an
       error to say "<File> has been modified externally, merging changes automatically."
-       */
-      clearTimeout(this.timer)
-      this.timer = setTimeout(() => {
-        if (file instanceof TFile) {
+      */
+      if (file instanceof TFile && this.settings.excludedFolders.every(folder => !file.path.startsWith(folder + '/')) ) {
+        clearTimeout(this.timer[file.path])
+        this.timer[file.path] = setTimeout(() => {
           this.app.fileManager.processFrontMatter(file, (frontmatter) => {
             frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
           })
-        }
-      }, 15 * 1000)
+        }, 12 * 1000)
+      }
     }))
 
     this.addSettingTab(new FrontmatterModifiedSettingTab(this.app, this))
@@ -59,7 +61,7 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
     const { containerEl } = this
 
     containerEl.empty()
-    containerEl.createEl('h2', {text: 'Update modified date settings'})
+    containerEl.createEl('h2', { text: 'Update modified date settings' })
 
     // Frontmatter property setting
     new Setting(containerEl)
@@ -82,6 +84,17 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.momentFormat)
         .onChange(async (value) => {
           this.plugin.settings.momentFormat = value
+          await this.plugin.saveSettings()
+        }))
+
+    // Exclude folders
+    new Setting(containerEl)
+      .setName('Exclude folders')
+      .setDesc('Add a list of folders to exclude, one folder per line. All subfolders will be also excluded.')
+      .addTextArea(text => text
+        .setValue(this.plugin.settings.excludedFolders.join('\n'))
+        .onChange(async (value) => {
+          this.plugin.settings.excludedFolders = value.split('\n').map(x => x.trim()).filter(x => !!x)
           await this.plugin.saveSettings()
         }))
   }
