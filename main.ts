@@ -27,7 +27,7 @@ export default class FrontmatterModified extends Plugin {
       Obsidian doesn't appear to correctly handle this situation otherwise, and pops an
       error to say "<File> has been modified externally, merging changes automatically."
       */
-      if (file instanceof TFile && this.settings.excludedFolders.every(folder => !file.path.startsWith(folder + '/')) ) {
+      if (file instanceof TFile && !this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/')) ) {
         clearTimeout(this.timer[file.path])
         this.timer[file.path] = setTimeout(() => {
           this.app.fileManager.processFrontMatter(file, (frontmatter) => {
