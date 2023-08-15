@@ -14,7 +14,7 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
-  timer: { [key: string]: NodeJS.Timeout } = {}
+  timer: { [key: string]: number } = {}
 
   async onload () {
     await this.loadSettings()
@@ -29,7 +29,7 @@ export default class FrontmatterModified extends Plugin {
       */
       if (file instanceof TFile && !this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/')) ) {
         clearTimeout(this.timer[file.path])
-        this.timer[file.path] = setTimeout(() => {
+        this.timer[file.path] = window.setTimeout(() => {
           this.app.fileManager.processFrontMatter(file, (frontmatter) => {
             frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
           })
@@ -61,7 +61,6 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
     const { containerEl } = this
 
     containerEl.empty()
-    containerEl.createEl('h2', { text: 'Update modified date settings' })
 
     // Frontmatter property setting
     new Setting(containerEl)
