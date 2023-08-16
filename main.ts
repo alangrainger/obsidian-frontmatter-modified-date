@@ -12,19 +12,9 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   excludedFolders: []
 }
 
-interface FileStatus {
-  timeout: number;
-  processed: boolean;
-}
-
-const DEFAULT_STATUS: FileStatus = {
-  timeout: 0,
-  processed: false
-}
-
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
-  fileStatus: { [key: string]: FileStatus } = {}
+  timer: { [key: string]: number } = {}
 
   async onload () {
     await this.loadSettings()
@@ -38,23 +28,21 @@ export default class FrontmatterModified extends Plugin {
       error to say "<File> has been modified externally, merging changes automatically."
       */
       if (file instanceof TFile && !this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
-        if (!this.fileStatus[file.path]) {
-          this.fileStatus[file.path] = DEFAULT_STATUS
-        }
-        if (!this.fileStatus[file.path].processed) {
-          clearTimeout(this.fileStatus[file.path].timeout)
-          this.fileStatus[file.path].timeout = window.setTimeout(() => {
+        if (this.timer[file.path] !== -1) {
+          clearTimeout(this.timer[file.path])
+          this.timer[file.path] = window.setTimeout(() => {
             this.app.fileManager.processFrontMatter(file, (frontmatter) => {
               frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
               // When we update the frontmatter with processFrontMatter(), it fires off a second
               // 'modify' event. Adding this de-duplication ensures we process it just once.
-              this.fileStatus[file.path].processed = true
+              this.timer[file.path] = -1
             })
           }, 10 * 1000)
         } else {
           // This file has already had the frontmatter updated, and is now experiencing
-          // the second duplicate 'modify' event due to using processFrontMatter()
-          this.fileStatus[file.path].processed = false
+          // the second duplicate 'modify' event due to using processFrontMatter().
+          // We don't need to take any action here to update the frontmatter.
+          delete this.timer[file.path]
         }
       }
     }))
