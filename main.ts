@@ -49,12 +49,14 @@ export default class FrontmatterModified extends Plugin {
        * And this thread: https://forum.obsidian.md/t/14874
        *
        * The way I am doing this is probably a "bad" way. Anyone who knows the best practice
-       * here, please let me know!
+       * here, please let me know! It works just fine but perhaps there's a better way.
        */
       this.registerDomEvent(document, 'keyup', (ev) => {
         try {
+          // Check to see if the typing event was in the editor DOM element
           // @ts-ignore
           if (ev.target.closest('.markdown-source-view')) {
+            // Find the active TFile inside the editor view
             // @ts-ignore
             this.updateFrontmatter(ev.view.app.workspace.activeEditor.file)
           }
@@ -158,7 +160,7 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
       .setDesc(`EXPERIMENTAL! If you experience issues with external processes modifying your files and causing
       the frontmatter to update, you can try this mode. It watches for typing events, and then updates the 
       frontmatter only when you type. This means that some events like updating your note or properties using
-      your mouse may not cause the modified field to update.`)
+      your mouse may not cause the modified field to update. You will need to restart Obsidian after this change.`)
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.useKeyupEvents)
