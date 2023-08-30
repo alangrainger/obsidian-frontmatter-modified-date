@@ -1,6 +1,6 @@
 {
 	"name": "frontmatter-modified-date",
-	"version": "1.0.5",
+	"version": "1.1.0",
 	"description": "Automatically update a frontmatter modified date field",
 	"main": "main.js",
 	"scripts": {
