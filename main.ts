@@ -5,13 +5,17 @@ interface FrontmatterModifiedSettings {
   momentFormat: string;
   excludedFolders: string[];
   useKeyupEvents: boolean;
+  onlyUpdateExisting: boolean;
+  timeout: number;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   frontmatterProperty: 'modified',
   momentFormat: '',
   excludedFolders: [],
-  useKeyupEvents: false
+  useKeyupEvents: false,
+  onlyUpdateExisting: false,
+  timeout: 10
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -85,6 +89,14 @@ export default class FrontmatterModified extends Plugin {
    * @param {TFile} file
    */
   async updateFrontmatter (file: TFile) {
+    if (this.settings.onlyUpdateExisting) {
+      const cache = this.app.metadataCache.getFileCache(file)
+      if (!cache?.frontmatter?.[this.settings.frontmatterProperty]) {
+        // The user has chosen to only update the frontmatter property IF it already exists.
+        // As the property does not exist, we now exit.
+        return
+      }
+    }
     if (!this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
       if (this.timer[file.path] === -1) {
         // This file has already had the frontmatter updated, and is now experiencing
@@ -101,7 +113,7 @@ export default class FrontmatterModified extends Plugin {
             // 'modify' event. Adding this de-duplication ensures we process it just once.
             this.timer[file.path] = -1
           })
-        }, 10 * 1000)
+        }, this.settings.timeout * 1000)
       }
     }
   }
@@ -155,12 +167,26 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }))
 
+    // Update existing fields toggle
+    new Setting(containerEl)
+      .setName('Only update existing fields')
+      .setDesc('If you turn this on, it will only update a frontmatter field *if that field already exists*.')
+      .addToggle(toggle => {
+        toggle
+          .setValue(this.plugin.settings.onlyUpdateExisting)
+          .onChange(async (value) => {
+            this.plugin.settings.onlyUpdateExisting = value
+            await this.plugin.saveSettings()
+          })
+      })
+
+    // Use typing events toggle
     new Setting(containerEl)
       .setName('Use typing events instead of Obsidian events')
-      .setDesc(`EXPERIMENTAL! If you experience issues with external processes modifying your files and causing
+      .setDesc(`If you experience issues with external processes modifying your files and causing
       the frontmatter to update, you can try this mode. It watches for typing events, and then updates the 
       frontmatter only when you type. This means that some events like updating your note or properties using
-      your mouse may not cause the modified field to update. You will need to restart Obsidian after this change.`)
+      your mouse will not cause the modified field to update. You will need to restart Obsidian after this change.`)
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.useKeyupEvents)
