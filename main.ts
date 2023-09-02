@@ -183,10 +183,12 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
     // Use typing events toggle
     new Setting(containerEl)
       .setName('Use typing events instead of Obsidian events')
-      .setDesc(`If you experience issues with external processes modifying your files and causing
-      the frontmatter to update, you can try this mode. It watches for typing events, and then updates the 
-      frontmatter only when you type. This means that some events like updating your note or properties using
-      your mouse will not cause the modified field to update. You will need to restart Obsidian after this change.`)
+      .setDesc(`If you make changes to a file using an external editor and Obsidian is currently open, Obsidian
+	  will register this as a modification and update the frontmatter. If you don't want this to happen, and only
+      want the frontmatter when you are making changes inside Obsidian, you can try this mode. It watches for typing 
+	  events, and then updates the frontmatter only when you type. This means that some events like updating your note 
+	  or properties using your mouse will not cause the modified field to update. You will need to restart Obsidian 
+	  after this change.`)
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.useKeyupEvents)
