@@ -27,15 +27,15 @@ export default class FrontmatterModified extends Plugin {
 
     if (!this.settings.useKeyupEvents) {
       /*
-       * This is the default mode, where we watch for the Obsidian 'modify' event on a file
-       * and then update the frontmatter.
+       * This is the default mode, where we watch for a change in the editor and then
+       * update the frontmatter.
        *
        * For users who experience issues due to external programs modifying their files,
        * they can use the special 'useKeyupEvents' mode below.
        */
-      this.registerEvent(this.app.vault.on('modify', (file) => {
-        if (file instanceof TFile) {
-          this.updateFrontmatter(file)
+      this.registerEvent(this.app.workspace.on('editor-change', (editor, info) => {
+        if (info.file instanceof TFile) {
+          this.updateFrontmatter(info.file)
         }
       }))
     } else if (this.settings.useKeyupEvents) {
@@ -56,15 +56,20 @@ export default class FrontmatterModified extends Plugin {
        * here, please let me know! It works just fine but perhaps there's a better way.
        */
       this.registerDomEvent(document, 'keyup', (ev) => {
-        try {
-          // Check to see if the typing event was in the editor DOM element
-          // @ts-ignore
-          if (ev.target.closest('.markdown-source-view')) {
-            // Find the active TFile inside the editor view
+        // Check to see if the inputted key is a single, visible Unicode character.
+        // This is to prevent matching arrow keys, etc. Using Unicode is necessary
+        // to match on emoji and other 2-byte characters.
+        if (!ev.ctrlKey && !ev.altKey && !ev.metaKey && /^.$/u.test(ev.key)) {
+          try {
+            // Check to see if the typing event was in the editor DOM element
             // @ts-ignore
-            this.updateFrontmatter(ev.view.app.workspace.activeEditor.file)
-          }
-        } catch (e) { }
+            if (ev.target.closest('.markdown-source-view .cm-editor')) {
+              // Find the active TFile inside the editor view
+              // @ts-ignore
+              this.updateFrontmatter(ev.view.app.workspace.activeEditor.file)
+            }
+          } catch (e) { }
+        }
       })
     }
 
@@ -89,31 +94,36 @@ export default class FrontmatterModified extends Plugin {
    * @param {TFile} file
    */
   async updateFrontmatter (file: TFile) {
-    if (this.timer[file.path] === -1) {
-      // This file has already had the frontmatter updated, and is now experiencing
-      // the second duplicate 'modify' event due to using processFrontMatter().
-      // We don't need to take any action here to update the frontmatter.
-      delete this.timer[file.path]
-    } else {
-      // This is the normal update function
-      clearTimeout(this.timer[file.path])
-      this.timer[file.path] = window.setTimeout(() => {
-        this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-          if (this.settings.onlyUpdateExisting && !frontmatter[this.settings.frontmatterProperty]) {
-            // The user has chosen to only update the frontmatter property IF it already exists
-            return
-          } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
-            // This folder is in the exclusion list
-            return
-          } else {
-            frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
-            // When we update the frontmatter with processFrontMatter(), it fires off a second
-            // 'modify' event. Adding this de-duplication ensures we process it just once.
-            this.timer[file.path] = -1
+    clearTimeout(this.timer[file.path])
+    this.timer[file.path] = window.setTimeout(() => {
+      this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        if (this.settings.onlyUpdateExisting && !frontmatter[this.settings.frontmatterProperty]) {
+          // The user has chosen to only update the frontmatter property IF it already exists
+          return
+        } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
+          // This folder is in the exclusion list
+          return
+        } else {
+          // Update the frontmatter field
+          //
+          // We will only update if it's been more than 30 seconds since the last recorded time. We do this
+          // as a preventative measure against a race condition where two devices have the same note open
+          // and are both syncing and updating each other.
+          const now = moment()
+          let secondsSinceLastUpdate = Infinity
+          if (frontmatter[this.settings.frontmatterProperty]) {
+            // Get the length of time since the last update. Use a strict moment
+            const lastUpdate = moment(frontmatter[this.settings.frontmatterProperty], this.settings.momentFormat, true)
+            if (lastUpdate.isValid()) {
+              secondsSinceLastUpdate = now.diff(lastUpdate, 'seconds')
+            }
           }
-        })
-      }, this.settings.timeout * 1000)
-    }
+          if (secondsSinceLastUpdate > 30) {
+            frontmatter[this.settings.frontmatterProperty] = now.format(this.settings.momentFormat)
+          }
+        }
+      })
+    }, this.settings.timeout * 1000)
   }
 }
 
