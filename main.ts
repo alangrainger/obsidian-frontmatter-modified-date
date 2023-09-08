@@ -89,32 +89,30 @@ export default class FrontmatterModified extends Plugin {
    * @param {TFile} file
    */
   async updateFrontmatter (file: TFile) {
-    if (this.settings.onlyUpdateExisting) {
-      const cache = this.app.metadataCache.getFileCache(file)
-      if (!cache?.frontmatter?.[this.settings.frontmatterProperty]) {
-        // The user has chosen to only update the frontmatter property IF it already exists.
-        // As the property does not exist, we now exit.
-        return
-      }
-    }
-    if (!this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
-      if (this.timer[file.path] === -1) {
-        // This file has already had the frontmatter updated, and is now experiencing
-        // the second duplicate 'modify' event due to using processFrontMatter().
-        // We don't need to take any action here to update the frontmatter.
-        delete this.timer[file.path]
-      } else {
-        // This is the normal update function
-        clearTimeout(this.timer[file.path])
-        this.timer[file.path] = window.setTimeout(() => {
-          this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+    if (this.timer[file.path] === -1) {
+      // This file has already had the frontmatter updated, and is now experiencing
+      // the second duplicate 'modify' event due to using processFrontMatter().
+      // We don't need to take any action here to update the frontmatter.
+      delete this.timer[file.path]
+    } else {
+      // This is the normal update function
+      clearTimeout(this.timer[file.path])
+      this.timer[file.path] = window.setTimeout(() => {
+        this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+          if (this.settings.onlyUpdateExisting && !frontmatter[this.settings.frontmatterProperty]) {
+            // The user has chosen to only update the frontmatter property IF it already exists
+            return
+          } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
+            // This folder is in the exclusion list
+            return
+          } else {
             frontmatter[this.settings.frontmatterProperty] = moment().format(this.settings.momentFormat)
             // When we update the frontmatter with processFrontMatter(), it fires off a second
             // 'modify' event. Adding this de-duplication ensures we process it just once.
             this.timer[file.path] = -1
-          })
-        }, this.settings.timeout * 1000)
-      }
+          }
+        })
+      }, this.settings.timeout * 1000)
     }
   }
 }
