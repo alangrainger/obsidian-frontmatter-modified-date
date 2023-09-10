@@ -7,6 +7,7 @@ interface FrontmatterModifiedSettings {
   useKeyupEvents: boolean;
   onlyUpdateExisting: boolean;
   timeout: number;
+  excludeField: string;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -15,7 +16,8 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   excludedFolders: [],
   useKeyupEvents: false,
   onlyUpdateExisting: false,
-  timeout: 10
+  timeout: 10,
+  excludeField: 'exclude_modified_update'
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -99,6 +101,9 @@ export default class FrontmatterModified extends Plugin {
       this.app.fileManager.processFrontMatter(file, (frontmatter) => {
         if (this.settings.onlyUpdateExisting && !frontmatter[this.settings.frontmatterProperty]) {
           // The user has chosen to only update the frontmatter property IF it already exists
+          return
+        } else if (frontmatter[this.settings.excludeField]) {
+          // This file has been excluded by YAML field
           return
         } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
           // This folder is in the exclusion list
