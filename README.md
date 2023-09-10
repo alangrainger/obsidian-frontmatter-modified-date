@@ -12,6 +12,12 @@ This is different from other plugins in that it does not use the filesystem modi
 - Specify the date format, using [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 - Exclude folders which you don't want to be automatically updated. This is important for anywhere you store your scripts or Templater templates.
 
+## Excluding files
+
+You can exclude a folder and all its subfolders in the Settings page.
+
+If you want to exclude a single file, you can add a property called `exclude_modified_update` and give it a value. Setting it to `true` or using the Checkbox property type would be the most sensible option.
+
 ## "Merging changes" popup
 
 It's possible when using this plugin that you will see a message like this, however it should be a rare occurance rather than the norm:
