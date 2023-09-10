@@ -1,6 +1,6 @@
 ![](https://img.shields.io/github/license/alangrainger/obsidian-frontmatter-modified-date) ![](https://img.shields.io/github/v/release/alangrainger/obsidian-frontmatter-modified-date?style=flat-square) ![](https://img.shields.io/github/downloads/alangrainger/obsidian-frontmatter-modified-date/total)
 
-# Update frontmatter modified date
+# Update modified field on edit
 
 This plugin will automatically update a modified property in your frontmatter/YAML when you edit a note.
 
