@@ -8,6 +8,8 @@ interface FrontmatterModifiedSettings {
   onlyUpdateExisting: boolean;
   timeout: number;
   excludeField: string;
+  appendField: string;
+  appendMaximumFrequency: moment.unitOfTime.StartOf;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -17,7 +19,9 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   useKeyupEvents: false,
   onlyUpdateExisting: false,
   timeout: 10,
-  excludeField: 'exclude_modified_update'
+  excludeField: 'exclude_modified_update',
+  appendField: 'append_modified_update',
+  appendMaximumFrequency: 'day' // Append a maximum of 1 row per 'unit'
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -115,16 +119,43 @@ export default class FrontmatterModified extends Plugin {
           // as a preventative measure against a race condition where two devices have the same note open
           // and are both syncing and updating each other.
           const now = moment()
+          // Are we appending to an array of entries?
+          const isAppendArray = frontmatter[this.settings.appendField] === true
           let secondsSinceLastUpdate = Infinity
+          let previousEntryMoment
           if (frontmatter[this.settings.frontmatterProperty]) {
+            let previousEntry = frontmatter[this.settings.frontmatterProperty]
+            if (isAppendArray && Array.isArray(previousEntry)) {
+              // If we are using an array of updates, get the last item in the list
+              previousEntry = previousEntry[previousEntry.length - 1]
+            }
             // Get the length of time since the last update. Use a strict moment
-            const lastUpdate = moment(frontmatter[this.settings.frontmatterProperty], this.settings.momentFormat, true)
-            if (lastUpdate.isValid()) {
-              secondsSinceLastUpdate = now.diff(lastUpdate, 'seconds')
+            previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
+            if (previousEntryMoment.isValid()) {
+              secondsSinceLastUpdate = now.diff(previousEntryMoment, 'seconds')
             }
           }
           if (secondsSinceLastUpdate > 30) {
-            frontmatter[this.settings.frontmatterProperty] = now.format(this.settings.momentFormat)
+            let newEntry: string | string[] = now.format(this.settings.momentFormat)
+            if (isAppendArray) {
+              let entries = frontmatter[this.settings.frontmatterProperty] || []
+              if (!Array.isArray(entries)) entries = [entries]
+              // We are using an array of entries. We need to check whether we want to replace the last array
+              // entry (e.g. it is within the same timeframe unit), or we want to append a new entry
+              if (entries.length && previousEntryMoment) {
+                if (now.isSame(previousEntryMoment, this.settings.appendMaximumFrequency)) {
+                  // Same timeframe as the previous entry - replace it
+                  entries[entries.length - 1] = newEntry
+                } else {
+                  entries.push(newEntry)
+                }
+              } else {
+                // No existing entries, push the new entry
+                entries.push(newEntry)
+              }
+              newEntry = entries
+            }
+            frontmatter[this.settings.frontmatterProperty] = newEntry
           }
         }
       })
