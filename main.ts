@@ -8,6 +8,7 @@ interface FrontmatterModifiedSettings {
   onlyUpdateExisting: boolean;
   timeout: number;
   excludeField: string;
+  appendToHistory: string;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -17,7 +18,8 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   useKeyupEvents: false,
   onlyUpdateExisting: false,
   timeout: 10,
-  excludeField: 'exclude_modified_update'
+  excludeField: 'exclude_modified_update',
+  appendToHistory: 'append_modified_update'
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -124,7 +126,23 @@ export default class FrontmatterModified extends Plugin {
             }
           }
           if (secondsSinceLastUpdate > 30) {
-            frontmatter[this.settings.frontmatterProperty] = now.format(this.settings.momentFormat)
+            let propValue = now.format(this.settings.momentFormat)
+
+            if (frontmatter[this.settings.appendToHistory]) {
+              if (Array.isArray(frontmatter[this.settings.frontmatterProperty])) {
+                // Append the current date to the list if it's not already there
+                if (!frontmatter[this.settings.frontmatterProperty].includes(propValue)) {
+                  frontmatter[this.settings.frontmatterProperty].push(propValue)
+                }
+              } else {
+                // Create an array with the original value and the current date
+                frontmatter[this.settings.frontmatterProperty] = frontmatter[this.settings.frontmatterProperty].includes(propValue) ?
+                  [propValue] :
+                  [frontmatter[this.settings.frontmatterProperty], propValue]
+              }
+            } else {
+              frontmatter[this.settings.frontmatterProperty] = propValue
+            }
           }
         }
       })

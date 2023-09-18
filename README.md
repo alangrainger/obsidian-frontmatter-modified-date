@@ -18,6 +18,12 @@ You can exclude a folder and all its subfolders in the Settings page.
 
 If you want to exclude a single file, you can add a property called `exclude_modified_update` and give it a value. Setting it to `true` or using the Checkbox property type would be the most sensible option.
 
+## Append date to history
+
+You can also append the date to an history by adding a property called `append_modified_update` and giving it `true` as a value. This is useful if you want to keep track of every time you edit a note.
+
+> [!WARNING] Removing the `append_modified_update` property from the frontmatter will remove all saved modification dates.
+
 ## "Merging changes" popup
 
 It's possible when using this plugin that you will see a message like this, however it should be a rare occurance rather than the norm:
