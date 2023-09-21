@@ -6,17 +6,23 @@ This plugin will automatically update a modified property in your frontmatter/YA
 
 This is different from other plugins in that it does not use the filesystem modified time. The frontmatter will only update when you actually work on a file inside Obsidian.
 
+---
+
 ## Options
 
 - Specify whatever YAML field name you prefer.
 - Specify the date format, using [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 - Exclude folders which you don't want to be automatically updated. This is important for anywhere you store your scripts or Templater templates.
 
+---
+
 ## Excluding files
 
 You can exclude a folder and all its subfolders in the Settings page.
 
 If you want to exclude a single file, you can add a property called `exclude_modified_update` and give it a value. Setting it to `true` or using the Checkbox property type would be the most sensible option.
+
+---
 
 ## Append date to history
 
@@ -29,6 +35,8 @@ You can also append the date to an history by adding a property called `append_m
 The default frequency of entries is maximum one per day - so if you update a note on the same day it will modify the existing entry for that day, rather than appending a new one.
 
 If you wish to change that frequency, you can edit your `data.json` file and change the value for `appendMaximumFrequency`.
+
+---
 
 ## "Merging changes" popup
 
