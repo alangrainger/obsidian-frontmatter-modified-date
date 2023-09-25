@@ -26,7 +26,9 @@ If you want to exclude a single file, you can add a property called `exclude_mod
 
 ## Append date to history
 
-You can also append the date to an history by adding a property called `append_modified_update` and giving it `true` as a value. This is useful if you want to keep track of every time you edit a note.
+You can also append the date to a history array by adding a checkbox property called `append_modified_update`. This is useful if you want to keep track of every time you edit a note.
+
+<img src="https://github.com/alangrainger/obsidian-frontmatter-modified-date/assets/16197738/131aae77-28b0-4f6b-a573-b86eafe4bfe1" width="300">
 
 > 🚩 **Warning** 
 > 
