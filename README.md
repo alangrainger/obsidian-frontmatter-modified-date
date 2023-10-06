@@ -36,7 +36,7 @@ You can also append the date to a history array by adding a checkbox property ca
 
 The default frequency of entries is maximum one per day - so if you update a note on the same day it will modify the existing entry for that day, rather than appending a new one.
 
-If you wish to change that frequency, you can edit your `data.json` file and change the value for `appendMaximumFrequency`.
+If you wish to change that frequency, you can edit your `data.json` file and change the value for `appendMaximumFrequency`. You can use [any duration MomentJS supports](https://momentjs.com/docs/#/durations/) - `seconds`, `hours`, `months` etc.
 
 ---
 
