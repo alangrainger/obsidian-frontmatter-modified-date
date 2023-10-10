@@ -102,17 +102,18 @@ export default class FrontmatterModified extends Plugin {
   async updateFrontmatter (file: TFile) {
     clearTimeout(this.timer[file.path])
     this.timer[file.path] = window.setTimeout(() => {
-      this.app.fileManager.processFrontMatter(file, frontmatter => {
-        if (this.settings.onlyUpdateExisting && !frontmatter[this.settings.frontmatterProperty]) {
-          // The user has chosen to only update the frontmatter property IF it already exists
+      const cache = this.app.metadataCache.getFileCache(file)
+      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.[this.settings.frontmatterProperty]) {
+        // The user has chosen to only update the frontmatter property IF it already exists
 
-        } else if (frontmatter[this.settings.excludeField]) {
-          // This file has been excluded by YAML field
+      } else if (cache?.frontmatter?.[this.settings.excludeField]) {
+        // This file has been excluded by YAML field
 
-        } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
-          // This folder is in the exclusion list
+      } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
+        // This folder is in the exclusion list
 
-        } else {
+      } else {
+        this.app.fileManager.processFrontMatter(file, frontmatter => {
           // Update the frontmatter field
           //
           // We will only update if it's been more than 30 seconds since the last recorded time. We do this
@@ -157,8 +158,8 @@ export default class FrontmatterModified extends Plugin {
             }
             frontmatter[this.settings.frontmatterProperty] = newEntry
           }
-        }
-      })
+        })
+      }
     }, this.settings.timeout * 1000)
   }
 }
