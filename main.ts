@@ -103,7 +103,7 @@ export default class FrontmatterModified extends Plugin {
     clearTimeout(this.timer[file.path])
     this.timer[file.path] = window.setTimeout(() => {
       const cache = this.app.metadataCache.getFileCache(file)
-      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.[this.settings.frontmatterProperty]) {
+      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.hasOwnProperty(this.settings.frontmatterProperty)) {
         // The user has chosen to only update the frontmatter property IF it already exists
 
       } else if (cache?.frontmatter?.[this.settings.excludeField]) {
