@@ -121,7 +121,7 @@ export default class FrontmatterModified extends Plugin {
           // and are both syncing and updating each other.
           const now = moment()
           // Are we appending to an array of entries?
-          const isAppendArray = frontmatter[this.settings.appendField] === true
+          const isAppendArray = frontmatter[this.settings.appendField] || this.plugin.settings.append_modified_update === true
           let secondsSinceLastUpdate = Infinity
           let previousEntryMoment
           if (frontmatter[this.settings.frontmatterProperty]) {
@@ -221,6 +221,19 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.onlyUpdateExisting)
           .onChange(async value => {
             this.plugin.settings.onlyUpdateExisting = value
+            await this.plugin.saveSettings()
+          })
+      })
+
+	// Append or overwrite the date 
+    new Setting(containerEl)
+      .setName('Append new date, instead of overwriting')
+      .setDesc('If you turn this on if you want to have \"append_modified_update\" enabled for all notes.')
+      .addToggle(toggle => {
+        toggle
+          .setValue(this.plugin.settings.append_modified_update)
+          .onChange(async value => {
+            this.plugin.settings.append_modified_update = value
             await this.plugin.saveSettings()
           })
       })
