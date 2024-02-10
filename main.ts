@@ -228,7 +228,7 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
 	// Append or overwrite the date 
     new Setting(containerEl)
       .setName('Append new date, instead of overwriting')
-      .setDesc('If you turn this on if you want to have \"append_modified_update\" enabled for all notes.')
+      .setDesc('Turn this on if you want to have \"append_modified_update\" enabled for all notes.')
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.append_modified_update)
