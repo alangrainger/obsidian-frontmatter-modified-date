@@ -10,6 +10,8 @@ interface FrontmatterModifiedSettings {
   excludeField: string;
   appendField: string;
   appendMaximumFrequency: moment.unitOfTime.StartOf;
+  frontmatterAppendProperty: string;
+  enableVaultEditHistory: boolean;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -21,7 +23,9 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   timeout: 10,
   excludeField: 'exclude_modified_update',
   appendField: 'append_modified_update',
-  appendMaximumFrequency: 'day' // Append a maximum of 1 row per 'unit'
+  appendMaximumFrequency: 'day', // Append a maximum of 1 row per 'unit'
+  frontmatterAppendProperty: "edit_log",
+  enableVaultEditHistory: false
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -124,11 +128,16 @@ export default class FrontmatterModified extends Plugin {
           const isAppendArray = frontmatter[this.settings.appendField] === true
           let secondsSinceLastUpdate = Infinity
           let previousEntryMoment
-          if (frontmatter[this.settings.frontmatterProperty]) {
-            let previousEntry = frontmatter[this.settings.frontmatterProperty]
-            if (isAppendArray && Array.isArray(previousEntry)) {
-              // If we are using an array of updates, get the last item in the list
-              previousEntry = previousEntry[previousEntry.length - 1]
+           if (frontmatter[this.settings.frontmatterProperty]) {
+            let previousEntry = frontmatter[this.settings.frontmatterProperty];
+            let lastModLogEntry = frontmatter[this.settings.frontmatterAppendProperty]
+            if (isAppendArray || this.settings.enableVaultEditHistory) {
+              if (Array.isArray(lastModLogEntry)) {
+                // If we are using an array of updates, get the last item in the list
+                previousEntry = lastModLogEntry[lastModLogEntry.length - 1];
+              } else {
+                previousEntry = lastModLogEntry;
+              }
             }
             // Get the length of time since the last update. Use a strict moment
             previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
@@ -138,8 +147,8 @@ export default class FrontmatterModified extends Plugin {
           }
           if (secondsSinceLastUpdate > 30) {
             let newEntry: string | string[] = now.format(this.settings.momentFormat)
-            if (isAppendArray) {
-              let entries = frontmatter[this.settings.frontmatterProperty] || []
+            if (isAppendArray || this.settings.enableVaultEditHistory) {
+              let entries = frontmatter[this.settings.frontmatterAppendProperty] || []
               if (!Array.isArray(entries)) entries = [entries]
               // We are using an array of entries. We need to check whether we want to replace the last array
               // entry (e.g. it is within the same timeframe unit), or we want to append a new entry
@@ -155,8 +164,9 @@ export default class FrontmatterModified extends Plugin {
                 entries.push(newEntry)
               }
               newEntry = entries
+              frontmatter[this.settings.frontmatterAppendProperty] = newEntry;
             }
-            frontmatter[this.settings.frontmatterProperty] = newEntry
+            frontmatter[this.settings.frontmatterProperty] = now.format(this.settings.momentFormat);
           }
         })
       }
@@ -179,13 +189,25 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Frontmatter property setting
     new Setting(containerEl)
-      .setName('Frontmatter property')
+      .setName('Frontmatter property name')
       .setDesc('The name of the YAML/frontmatter property to update')
       .addText(text => text
         .setPlaceholder('modified')
         .setValue(this.plugin.settings.frontmatterProperty)
         .onChange(async value => {
           this.plugin.settings.frontmatterProperty = value
+          await this.plugin.saveSettings()
+        }))
+
+
+    new Setting(containerEl)
+      .setName('Edit log property name')
+      .setDesc('The name of the optional property used to store edit times')
+      .addText(text => text
+        .setPlaceholder('edit log')
+        .setValue(this.plugin.settings.frontmatterAppendProperty)
+        .onChange(async value => {
+          this.plugin.settings.frontmatterAppendProperty = value
           await this.plugin.saveSettings()
         }))
 
@@ -201,6 +223,18 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }))
 
+    // timeout settings
+    new Setting(containerEl)
+    .setName('Update after ___ seconds of inactivity')
+    .setDesc('Wait the specified number of seconds after typing or editing a file before updating the metadata.')
+    .addText(text => text
+      .setPlaceholder('10')
+      .setValue(this.plugin.settings.timeout.toString())
+      .onChange(async value => {
+        this.plugin.settings.timeout = parseInt(value);
+        await this.plugin.saveSettings()
+      }))
+
     // Exclude folders
     new Setting(containerEl)
       .setName('Exclude folders')
@@ -211,6 +245,32 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
           this.plugin.settings.excludedFolders = value.split('\n').map(x => x.trim()).filter(x => !!x)
           await this.plugin.saveSettings()
         }))
+
+    //global edit history log
+ new Setting(containerEl)
+ .setName('Enable edit history on all notes')
+ .setDesc('If you turn this on, all notes in this vault will automatically store a list of modification times. Folders excluded above will be ignored. If this is disabled, it can be enabled for each note by adding a checkbox named `append_modified_update` as a frontmatter property and checking it.')
+ .addToggle(toggle => {
+   toggle
+     .setValue(this.plugin.settings.enableVaultEditHistory)
+     .onChange(async value => {
+       this.plugin.settings.enableVaultEditHistory = value
+       await this.plugin.saveSettings()
+     })
+ })
+
+    //Append Maximum Frequency setting
+    new Setting(containerEl)
+    .setName('Max edit history frequency')
+    .setDesc('Show up to 1 edit entry per minute, hour, day, week, or month. If there are multiple edits in the specified period, the last edit entry will be updated instead.')
+    .addText(text => text
+      .setPlaceholder('hour')
+      .setValue(this.plugin.settings.appendMaximumFrequency || "")
+      .onChange(async value => {
+        const unitOfTimeStr = moment.normalizeUnits(value as moment.unitOfTime.All); 
+        this.plugin.settings.appendMaximumFrequency = unitOfTimeStr as moment.unitOfTime.StartOf
+        await this.plugin.saveSettings()
+      }))
 
     // Update existing fields toggle
     new Setting(containerEl)
