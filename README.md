@@ -13,6 +13,10 @@ This is different from other plugins in that it does not use the filesystem modi
 - Specify whatever YAML field name you prefer.
 - Specify the date format, using [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 - Exclude folders which you don't want to be automatically updated. This is important for anywhere you store your scripts or Templater templates.
+- Specify how many seconds after last file to wait before updating modification data.
+- Toggle an option to enable a Vaultwide global edit log field.
+- Customize the edit log YAML field name.
+- Specify the frequency of new edit log entries (eg: Maximum of 1 new edit log entry per hour)
 
 ---
 
@@ -30,13 +34,11 @@ You can also append the date to a history array by adding a checkbox property ca
 
 <img src="https://github.com/alangrainger/obsidian-frontmatter-modified-date/assets/16197738/131aae77-28b0-4f6b-a573-b86eafe4bfe1" width="300">
 
-> 🚩 **Warning** 
-> 
-> Removing the `append_modified_update` property from the frontmatter will remove all saved modification dates.
+If you want to use the edit history in all notes in your vault you can change the option titled 'Enable edit history on all notes'
 
 The default frequency of entries is maximum one per day - so if you update a note on the same day it will modify the existing entry for that day, rather than appending a new one.
 
-If you wish to change that frequency, you can edit your `data.json` file and change the value for `appendMaximumFrequency`. You can use any MomentJS unit of time, e.g. `second`, `minute`, `hour`, `month` etc.
+If you wish to change that frequency, you can change the 'Max edit history frequency' in settings. Alternatively, you can edit your `data.json` file and change the value for `appendMaximumFrequency`. You can use any MomentJS unit of time, e.g. `second`, `minute`, `hour`, `month` etc.
 
 ---
 
