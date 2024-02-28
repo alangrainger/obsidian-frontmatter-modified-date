@@ -125,20 +125,12 @@ export default class FrontmatterModified extends Plugin {
           // and are both syncing and updating each other.
           const now = moment()
           // Are we appending to an array of entries?
-          const isAppendArray = frontmatter[this.settings.appendField] === true
+          const isGlobalEdit = this.settings.enableVaultEditHistory === true
+          const isAppendArray = frontmatter[this.settings.appendField] === true || isGlobalEdit
           let secondsSinceLastUpdate = Infinity
           let previousEntryMoment
            if (frontmatter[this.settings.frontmatterProperty]) {
             let previousEntry = frontmatter[this.settings.frontmatterProperty];
-            let lastModLogEntry = frontmatter[this.settings.frontmatterAppendProperty]
-            if (isAppendArray || this.settings.enableVaultEditHistory) {
-              if (Array.isArray(lastModLogEntry)) {
-                // If we are using an array of updates, get the last item in the list
-                previousEntry = lastModLogEntry[lastModLogEntry.length - 1];
-              } else {
-                previousEntry = lastModLogEntry;
-              }
-            }
             // Get the length of time since the last update. Use a strict moment
             previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
             if (previousEntryMoment.isValid()) {
@@ -147,7 +139,7 @@ export default class FrontmatterModified extends Plugin {
           }
           if (secondsSinceLastUpdate > 30) {
             let newEntry: string | string[] = now.format(this.settings.momentFormat)
-            if (isAppendArray || this.settings.enableVaultEditHistory) {
+            if (isAppendArray) {
               let entries = frontmatter[this.settings.frontmatterAppendProperty] || []
               if (!Array.isArray(entries)) entries = [entries]
               // We are using an array of entries. We need to check whether we want to replace the last array
@@ -231,7 +223,7 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
       .setPlaceholder('10')
       .setValue(this.plugin.settings.timeout.toString())
       .onChange(async value => {
-        this.plugin.settings.timeout = parseInt(value);
+        this.plugin.settings.timeout = parseInt(value)
         await this.plugin.saveSettings()
       }))
 
