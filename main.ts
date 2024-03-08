@@ -10,6 +10,7 @@ interface FrontmatterModifiedSettings {
   excludeField: string;
   appendField: string;
   appendMaximumFrequency: moment.unitOfTime.StartOf;
+  asLinks: boolean
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -21,12 +22,14 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   timeout: 10,
   excludeField: 'exclude_modified_update',
   appendField: 'append_modified_update',
-  appendMaximumFrequency: 'day' // Append a maximum of 1 row per 'unit'
+  appendMaximumFrequency: 'day', // Append a maximum of 1 row per 'unit'
+  asLinks: false
 }
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
   timer: { [key: string]: number } = {}
+
 
   async onload () {
     await this.loadSettings()
@@ -131,13 +134,13 @@ export default class FrontmatterModified extends Plugin {
               previousEntry = previousEntry[previousEntry.length - 1]
             }
             // Get the length of time since the last update. Use a strict moment
-            previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
+            previousEntryMoment = this.parseFormat(previousEntry)
             if (previousEntryMoment.isValid()) {
               secondsSinceLastUpdate = now.diff(previousEntryMoment, 'seconds')
             }
           }
           if (secondsSinceLastUpdate > 30) {
-            let newEntry: string | string[] = now.format(this.settings.momentFormat)
+            let newEntry: string | string[] = this.applyFormat(now)
             if (isAppendArray) {
               let entries = frontmatter[this.settings.frontmatterProperty] || []
               if (!Array.isArray(entries)) entries = [entries]
@@ -161,6 +164,24 @@ export default class FrontmatterModified extends Plugin {
         })
       }
     }, this.settings.timeout * 1000)
+  }
+
+  parseFormat(source: string): moment.Moment {
+    const pattern = /^\[\[(.*)\]\]$/;
+
+    const result = this.settings.asLinks && pattern.test(source)
+      ? (pattern.exec(source) ?? [])[1]
+      : source
+      
+    return moment(result, this.settings.momentFormat, true)
+  }
+
+  applyFormat(now: moment.Moment): string {
+    const result = now.format(this.settings.momentFormat)
+
+    return this.settings.asLinks
+      ? `[[${result}]]`
+      : result
   }
 }
 
@@ -239,6 +260,18 @@ after this change.`)
           .setValue(this.plugin.settings.useKeyupEvents)
           .onChange(async value => {
             this.plugin.settings.useKeyupEvents = value
+            await this.plugin.saveSettings()
+          })
+      })
+
+    new Setting(containerEl)
+      .setName('Treat dates as links')
+      .setDesc('If you turn this on, your dates will be turned into links')
+      .addToggle(toggle => {
+        toggle
+          .setValue(this.plugin.settings.asLinks)
+          .onChange(async value => {
+            this.plugin.settings.asLinks = value
             await this.plugin.saveSettings()
           })
       })
