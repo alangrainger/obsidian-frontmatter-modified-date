@@ -1,7 +1,7 @@
-import { App, Plugin, PluginSettingTab, Setting, TFile, moment } from 'obsidian'
+import { App, Plugin, PluginSettingTab, Setting, TFile, TAbstractFile, moment } from 'obsidian'
 
 interface FrontmatterModifiedSettings {
-  frontmatterProperty: string;
+  modifiedFrontmatterProperty: string;
   momentFormat: string;
   excludedFolders: string[];
   useKeyupEvents: boolean;
@@ -10,10 +10,12 @@ interface FrontmatterModifiedSettings {
   excludeField: string;
   appendField: string;
   appendMaximumFrequency: moment.unitOfTime.StartOf;
+  storeCreatedDate: boolean;
+  createdFrontmatterProperty: string;
 }
 
 const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
-  frontmatterProperty: 'modified',
+  modifiedFrontmatterProperty: 'modified',
   momentFormat: '',
   excludedFolders: [],
   useKeyupEvents: false,
@@ -21,7 +23,9 @@ const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   timeout: 10,
   excludeField: 'exclude_modified_update',
   appendField: 'append_modified_update',
-  appendMaximumFrequency: 'day' // Append a maximum of 1 row per 'unit'
+  appendMaximumFrequency: 'day', // Append a maximum of 1 row per 'unit'
+  storeCreatedDate: false,
+  createdFrontmatterProperty: 'created',
 }
 
 export default class FrontmatterModified extends Plugin {
@@ -30,6 +34,18 @@ export default class FrontmatterModified extends Plugin {
 
   async onload () {
     await this.loadSettings()
+
+    /*
+    * We have to register the on create event inside of Workspace.onLayoutReady
+    * because otherwise when the vault is first loaded, a create event is fired for each file
+    */
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on('create', (file: TAbstractFile) => {
+        if (file instanceof TFile) {
+          this.updateFrontmatterCreated(file)
+        }
+      }))
+    })
 
     if (!this.settings.useKeyupEvents) {
       /*
@@ -41,7 +57,7 @@ export default class FrontmatterModified extends Plugin {
        */
       this.registerEvent(this.app.workspace.on('editor-change', (editor, info) => {
         if (info.file instanceof TFile) {
-          this.updateFrontmatter(info.file)
+          this.updateFrontmatterModified(info.file)
         }
       }))
     } else if (this.settings.useKeyupEvents) {
@@ -72,7 +88,7 @@ export default class FrontmatterModified extends Plugin {
             if (ev.target.closest('.markdown-source-view .cm-editor')) {
               // Find the active TFile inside the editor view
               // @ts-ignore
-              this.updateFrontmatter(ev.view.app.workspace.activeEditor.file)
+              this.updateFrontmatterModified(ev.view.app.workspace.activeEditor.file)
             }
           } catch (e) { }
         }
@@ -99,11 +115,11 @@ export default class FrontmatterModified extends Plugin {
    *
    * @param {TFile} file
    */
-  async updateFrontmatter (file: TFile) {
+  async updateFrontmatterModified (file: TFile) {
     clearTimeout(this.timer[file.path])
     this.timer[file.path] = window.setTimeout(() => {
       const cache = this.app.metadataCache.getFileCache(file)
-      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.hasOwnProperty(this.settings.frontmatterProperty)) {
+      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.hasOwnProperty(this.settings.modifiedFrontmatterProperty)) {
         // The user has chosen to only update the frontmatter property IF it already exists
 
       } else if (cache?.frontmatter?.[this.settings.excludeField]) {
@@ -124,8 +140,8 @@ export default class FrontmatterModified extends Plugin {
           const isAppendArray = frontmatter[this.settings.appendField] === true
           let secondsSinceLastUpdate = Infinity
           let previousEntryMoment
-          if (frontmatter[this.settings.frontmatterProperty]) {
-            let previousEntry = frontmatter[this.settings.frontmatterProperty]
+          if (frontmatter[this.settings.modifiedFrontmatterProperty]) {
+            let previousEntry = frontmatter[this.settings.modifiedFrontmatterProperty]
             if (isAppendArray && Array.isArray(previousEntry)) {
               // If we are using an array of updates, get the last item in the list
               previousEntry = previousEntry[previousEntry.length - 1]
@@ -139,7 +155,7 @@ export default class FrontmatterModified extends Plugin {
           if (secondsSinceLastUpdate > 30) {
             let newEntry: string | string[] = now.format(this.settings.momentFormat)
             if (isAppendArray) {
-              let entries = frontmatter[this.settings.frontmatterProperty] || []
+              let entries = frontmatter[this.settings.modifiedFrontmatterProperty] || []
               if (!Array.isArray(entries)) entries = [entries]
               // We are using an array of entries. We need to check whether we want to replace the last array
               // entry (e.g. it is within the same timeframe unit), or we want to append a new entry
@@ -156,13 +172,39 @@ export default class FrontmatterModified extends Plugin {
               }
               newEntry = entries
             }
-            frontmatter[this.settings.frontmatterProperty] = newEntry
+            frontmatter[this.settings.modifiedFrontmatterProperty] = newEntry
           }
         })
       }
     }, this.settings.timeout * 1000)
   }
+
+  /*
+   * Update the frontmatter created property when a file is created.
+   * @param {TFile} file
+   */
+  async updateFrontmatterCreated (file: TFile) {
+    const cache = this.app.metadataCache.getFileCache(file);
+    if (!this.settings.storeCreatedDate) {
+      // The user has chosen not to store the created date
+
+    } else if (cache?.frontmatter?.[this.settings.excludeField]) {
+      // This file has been excluded by YAML field
+
+    } else if (this.settings.excludedFolders.some(folder => file.path.startsWith(folder + '/'))) {
+      // This folder is in the exclusion list
+
+    } else {
+      this.app.fileManager.processFrontMatter(file, frontmatter => {
+        // Set the created date
+
+        const now = moment()
+        frontmatter[this.settings.createdFrontmatterProperty] = now.format(this.settings.momentFormat)
+      })
+    }
+  }
 }
+
 
 class FrontmatterModifiedSettingTab extends PluginSettingTab {
   plugin: FrontmatterModified
@@ -177,15 +219,15 @@ class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     containerEl.empty()
 
-    // Frontmatter property setting
+    // Frontmatter modified property setting
     new Setting(containerEl)
-      .setName('Frontmatter property')
-      .setDesc('The name of the YAML/frontmatter property to update')
+      .setName('Frontmatter modified property')
+      .setDesc('The name of the YAML/frontmatter property to update when the file is modified.')
       .addText(text => text
         .setPlaceholder('modified')
-        .setValue(this.plugin.settings.frontmatterProperty)
+        .setValue(this.plugin.settings.modifiedFrontmatterProperty)
         .onChange(async value => {
-          this.plugin.settings.frontmatterProperty = value
+          this.plugin.settings.modifiedFrontmatterProperty = value
           await this.plugin.saveSettings()
         }))
 
@@ -242,5 +284,30 @@ after this change.`)
             await this.plugin.saveSettings()
           })
       })
+
+    // Store created date toggle
+    new Setting(containerEl)
+    .setName('Store created date')
+    .setDesc('Also store the date a file is created in the YAML/frontmatter.')
+    .addToggle(toggle => {
+      toggle
+        .setValue(this.plugin.settings.storeCreatedDate)
+        .onChange(async value => {
+          this.plugin.settings.storeCreatedDate = value
+          await this.plugin.saveSettings()
+        })
+    })
+
+    // Frontmatter created property setting
+    new Setting(containerEl)
+    .setName('Frontmatter created property')
+    .setDesc('The name of the YAML/frontmatter property to set when the file is created.')
+    .addText(text => text
+      .setPlaceholder('created')
+      .setValue(this.plugin.settings.createdFrontmatterProperty)
+      .onChange(async value => {
+        this.plugin.settings.createdFrontmatterProperty = value
+        await this.plugin.saveSettings()
+      }))
   }
 }
