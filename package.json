@@ -1,6 +1,6 @@
 {
 	"name": "frontmatter-modified-date",
-	"version": "1.3.2",
+	"version": "1.4.0",
 	"description": "Automatically update a frontmatter modified date field when you modify your note. This will not use the filesystem time, but only when you modify the file through Obsidian.",
 	"main": "main.js",
 	"scripts": {

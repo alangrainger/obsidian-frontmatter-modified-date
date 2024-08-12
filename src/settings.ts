@@ -87,7 +87,7 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
         .setName('Frequency of updates')
         .setDesc('The plugin will store a maximum of 1 history entry per minute, hour, day, etc. If there are multiple edits in the specified period, the last edit entry will be updated instead.')
         .addDropdown(dropdown => {
-          ['second', 'minute', 'hour', 'day', 'week', 'month', 'quarter', 'year']
+          ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year']
             .forEach(unit => dropdown.addOption(unit, unit))
           dropdown
             .setValue(this.plugin.settings.appendMaximumFrequency || '')
