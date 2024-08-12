@@ -99,13 +99,14 @@ export default class FrontmatterModified extends Plugin {
           const now = moment()
           // Are we appending to an array of entries?
           const isAppendArray = this.settings.storeHistoryLog || frontmatter[this.settings.appendField] === true
+          const desc = this.settings.historyNewestFirst
           let secondsSinceLastUpdate = Infinity
           let previousEntryMoment
           if (frontmatter[this.settings.frontmatterProperty]) {
             let previousEntry = frontmatter[this.settings.frontmatterProperty]
             if (isAppendArray && Array.isArray(previousEntry)) {
               // If we are using an array of updates, get the last item in the list
-              previousEntry = previousEntry[previousEntry.length - 1]
+              previousEntry = previousEntry[desc ? 0 : previousEntry.length - 1]
             }
             // Get the length of time since the last update. Use a strict moment
             previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
@@ -116,7 +117,6 @@ export default class FrontmatterModified extends Plugin {
           if (secondsSinceLastUpdate > 30) {
             let newEntry: string | string[] = now.format(this.settings.momentFormat)
             if (isAppendArray) {
-              const desc = this.settings.historyNewestFirst
               let entries = frontmatter[this.settings.frontmatterProperty] || []
               if (!Array.isArray(entries)) entries = [entries] // In the case where the single previous entry was a string
               // We are using an array of entries. We need to check whether we want to replace the last array
