@@ -4,6 +4,7 @@ import { unitOfTime } from 'moment'
 
 export interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
+  createdDateProperty: string;
   momentFormat: string;
   storeHistoryLog: boolean;
   historyNewestFirst: boolean;
@@ -19,6 +20,7 @@ export interface FrontmatterModifiedSettings {
 
 export const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   frontmatterProperty: 'modified',
+  createdDateProperty: '',
   momentFormat: '',
   storeHistoryLog: false,
   historyNewestFirst: false,
@@ -45,15 +47,26 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     containerEl.empty()
 
-    // Frontmatter property setting
+    // Modified date property
     new Setting(containerEl)
-      .setName('Frontmatter property')
-      .setDesc('The name of the YAML/frontmatter property to update')
+      .setName('Modified date property')
+      .setDesc('The name of the YAML/frontmatter property to update when your note is modified')
       .addText(text => text
         .setPlaceholder('modified')
         .setValue(this.plugin.settings.frontmatterProperty)
         .onChange(async value => {
           this.plugin.settings.frontmatterProperty = value
+          await this.plugin.saveSettings()
+        }))
+    // Created date property
+    new Setting(containerEl)
+      .setName('Created date property (optional)')
+      .setDesc('Optional. Add a created property name, and the plugin will also update the note creation date.')
+      .addText(text => text
+        .setPlaceholder('created')
+        .setValue(this.plugin.settings.createdDateProperty)
+        .onChange(async value => {
+          this.plugin.settings.createdDateProperty = value
           await this.plugin.saveSettings()
         }))
 

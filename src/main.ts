@@ -91,12 +91,18 @@ export default class FrontmatterModified extends Plugin {
 
       } else {
         this.app.fileManager.processFrontMatter(file, frontmatter => {
-          // Update the frontmatter field
+          const now = moment()
+
+          // Update the created date field
+          if (this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
+            frontmatter[this.settings.createdDateProperty] = now.format(this.settings.momentFormat)
+          }
+
+          // Update the modified date field
           //
-          // We will only update if it's been more than 30 seconds since the last recorded time. We do this
+          // We will only update if it's been at least 30 seconds since the last recorded time. We do this
           // as a preventative measure against a race condition where two devices have the same note open
           // and are both syncing and updating each other.
-          const now = moment()
           // Are we appending to an array of entries?
           const isAppendArray = this.settings.storeHistoryLog || frontmatter[this.settings.appendField] === true
           const desc = this.settings.historyNewestFirst
