@@ -18,7 +18,7 @@ This is different from other plugins in that it does not use the filesystem modi
 
 The modified time will update when Obsidian fires an `editor-change` event. If you have another plugin like Linter or an external application updating your files, the modified date will update.
 
-If you want to avoid updates from other processes modify your notes, turn on the setting to "Use typing events instead of Obsidian events".
+If you want to avoid updates from other processes modifying your notes, turn on the setting to "Use typing events instead of Obsidian events".
 
 ### Excluding files
 
