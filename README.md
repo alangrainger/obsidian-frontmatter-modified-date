@@ -14,17 +14,19 @@ This is different from other plugins in that it does not use the filesystem modi
 - Specify the date format, using [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 - Exclude folders which you don't want to be automatically updated. This is important for anywhere you store your scripts or Templater templates.
 
----
+### Use typing events instead of Obsidian events
 
-## Excluding files
+The modified time will update when Obsidian fires an `editor-change` event. If you have another plugin like Linter or an external application updating your files, the modified date will update.
+
+If you want to avoid updates from other processes modify your notes, turn on the setting to "Use typing events instead of Obsidian events".
+
+### Excluding files
 
 You can exclude a folder and all its subfolders in the Settings page.
 
 If you want to exclude a single file, you can add a property called `exclude_modified_update` and give it a value. Setting it to `true` or using the Checkbox property type would be the most sensible option.
 
----
-
-## Append date to history
+### Append date to history
 
 You can also append the date to a history array by adding a checkbox property called `append_modified_update`. This is useful if you want to keep track of every time you edit a note.
 
