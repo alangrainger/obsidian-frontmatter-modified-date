@@ -90,62 +90,64 @@ export default class FrontmatterModified extends Plugin {
         // This folder is in the exclusion list
 
       } else {
-        this.app.fileManager.processFrontMatter(file, frontmatter => {
-          const now = moment()
-
-          // Update the created date field
-          if (this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
-            frontmatter[this.settings.createdDateProperty] = moment(file.stat.ctime).format(this.settings.momentFormat)
+        // Update the modified date field
+        //
+        // We will only update if it's been at least 30 seconds since the last recorded time. We do this
+        // as a preventative measure against a race condition where two devices have the same note open
+        // and are both syncing and updating each other.
+        // Are we appending to an array of entries?
+        const now = moment()
+        const isAppendArray = this.settings.storeHistoryLog || cache?.frontmatter?.[this.settings.appendField] === true
+        const desc = this.settings.historyNewestFirst
+        let secondsSinceLastUpdate = Infinity
+        let previousEntryMoment
+        if (cache?.frontmatter?.[this.settings.frontmatterProperty]) {
+          let previousEntry = cache?.frontmatter?.[this.settings.frontmatterProperty]
+          if (isAppendArray && Array.isArray(previousEntry)) {
+            // If we are using an array of updates, get the last item in the list
+            previousEntry = previousEntry[desc ? 0 : previousEntry.length - 1]
           }
-
-          // Update the modified date field
-          //
-          // We will only update if it's been at least 30 seconds since the last recorded time. We do this
-          // as a preventative measure against a race condition where two devices have the same note open
-          // and are both syncing and updating each other.
-          // Are we appending to an array of entries?
-          const isAppendArray = this.settings.storeHistoryLog || frontmatter[this.settings.appendField] === true
-          const desc = this.settings.historyNewestFirst
-          let secondsSinceLastUpdate = Infinity
-          let previousEntryMoment
-          if (frontmatter[this.settings.frontmatterProperty]) {
-            let previousEntry = frontmatter[this.settings.frontmatterProperty]
-            if (isAppendArray && Array.isArray(previousEntry)) {
-              // If we are using an array of updates, get the last item in the list
-              previousEntry = previousEntry[desc ? 0 : previousEntry.length - 1]
-            }
-            // Get the length of time since the last update. Use a strict moment
-            previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
-            if (previousEntryMoment.isValid()) {
-              secondsSinceLastUpdate = now.diff(previousEntryMoment, 'seconds')
-            }
+          // Get the length of time since the last update. Use a strict moment
+          previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
+          if (previousEntryMoment.isValid()) {
+            secondsSinceLastUpdate = now.diff(previousEntryMoment, 'seconds')
           }
-          if (secondsSinceLastUpdate > 30) {
-            let newEntry: string | string[] = now.format(this.settings.momentFormat)
-            if (isAppendArray) {
-              let entries = frontmatter[this.settings.frontmatterProperty] || []
-              if (!Array.isArray(entries)) entries = [entries] // In the case where the single previous entry was a string
-              // We are using an array of entries. We need to check whether we want to replace the last array
-              // entry (e.g. it is within the same timeframe unit), or we want to append a new entry
-              if (entries.length) {
-                if (previousEntryMoment && now.isSame(previousEntryMoment, this.settings.appendMaximumFrequency)) {
-                  // Same timeframe as the previous entry - replace it
-                  entries[desc ? 0 : entries.length - 1] = newEntry
-                } else {
-                  desc ? entries.unshift(newEntry) : entries.push(newEntry)
-                }
-                // Trim the array if needed
-                if (this.settings.historyMaxItems && entries.length > this.settings.historyMaxItems) {
-                  entries = desc ? entries.slice(0, this.settings.historyMaxItems) : entries.slice(-this.settings.historyMaxItems)
-                }
+        }
+        if (secondsSinceLastUpdate > 30) {
+          let newEntry: string | string[] = now.format(this.settings.momentFormat)
+          if (isAppendArray) {
+            let entries = cache?.frontmatter?.[this.settings.frontmatterProperty] || []
+            if (!Array.isArray(entries)) entries = [entries] // In the case where the single previous entry was a string
+            // We are using an array of entries. We need to check whether we want to replace the last array
+            // entry (e.g. it is within the same timeframe unit), or we want to append a new entry
+            if (entries.length) {
+              if (previousEntryMoment && now.isSame(previousEntryMoment, this.settings.appendMaximumFrequency)) {
+                // Same timeframe as the previous entry - replace it
+                entries[desc ? 0 : entries.length - 1] = newEntry
               } else {
-                entries.push(newEntry)
+                desc ? entries.unshift(newEntry) : entries.push(newEntry)
               }
-              newEntry = entries
+              // Trim the array if needed
+              if (this.settings.historyMaxItems && entries.length > this.settings.historyMaxItems) {
+                entries = desc ? entries.slice(0, this.settings.historyMaxItems) : entries.slice(-this.settings.historyMaxItems)
+              }
+            } else {
+              entries.push(newEntry)
             }
-            frontmatter[this.settings.frontmatterProperty] = newEntry
+            newEntry = entries
           }
-        })
+
+          // Update the frontmatter
+          this.app.fileManager.processFrontMatter(file, frontmatter => {
+            // Update the modified date field
+            frontmatter[this.settings.frontmatterProperty] = newEntry
+
+            // Create a created date field if requested
+            if (this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
+              frontmatter[this.settings.createdDateProperty] = moment(file.stat.ctime).format(this.settings.momentFormat)
+            }
+          })
+        }
       }
     }, this.settings.timeout * 1000)
   }

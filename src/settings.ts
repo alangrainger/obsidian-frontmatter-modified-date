@@ -179,5 +179,17 @@ after this change.`)
             await this.plugin.saveSettings()
           })
       })
+
+    // Typing timeout
+    new Setting(containerEl)
+      .setName('Timeout (seconds)')
+      .setDesc('How many seconds to wait after the last edit before updating the modified field. You can increase this value if you are experiencing too many "Merging changes" popups.')
+      .addText(text => text
+        .setPlaceholder('10')
+        .setValue(this.plugin.settings.timeout.toString())
+        .onChange(async value => {
+          this.plugin.settings.timeout = parseInt(value, 10) || DEFAULT_SETTINGS.timeout
+          await this.plugin.saveSettings()
+        }))
   }
 }
