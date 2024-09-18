@@ -108,13 +108,15 @@ export default class FrontmatterModified extends Plugin {
             previousEntry = previousEntry[desc ? 0 : previousEntry.length - 1]
           }
           // Get the length of time since the last update. Use a strict moment
-          previousEntryMoment = moment(previousEntry, this.settings.momentFormat, true)
+          previousEntryMoment = moment(previousEntry, this.settings.momentFormat)
           if (previousEntryMoment.isValid()) {
             secondsSinceLastUpdate = now.diff(previousEntryMoment, 'seconds')
           }
         }
+
         if (secondsSinceLastUpdate > 30) {
           let newEntry: string | string[] = now.format(this.settings.momentFormat)
+
           if (isAppendArray) {
             let entries = cache?.frontmatter?.[this.settings.frontmatterProperty] || []
             if (!Array.isArray(entries)) entries = [entries] // In the case where the single previous entry was a string
