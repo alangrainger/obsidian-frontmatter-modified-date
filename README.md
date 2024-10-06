@@ -14,6 +14,14 @@ This is different from other plugins in that it does not use the filesystem modi
 - Specify the date format, using [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 - Exclude folders which you don't want to be automatically updated. This is important for anywhere you store your scripts or Templater templates.
 
+### Date format
+
+This is specified in [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
+
+You should note that this doesn't necessarily need to be *only* a date. Moment format lets you put any free text inside square brackets `[]`. Some ways this might be useful in Obsidian is if you want to make your date into a link. You would specific a link like this (which is surrounding Obsidian's normal wikilink brackets with extra square brackets):
+
+`[[[]YYYY-MM-DD[]]]`
+
 ### Use typing events instead of Obsidian events
 
 The modified time will update when Obsidian fires an `editor-change` event. If you have another plugin like Linter or an external application updating your files, the modified date will update.
