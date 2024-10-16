@@ -18,7 +18,11 @@ This is different from other plugins in that it does not use the filesystem modi
 
 This is specified in [MomentJS format](https://momentjs.com/docs/#/displaying/format/).
 
-You should note that this doesn't necessarily need to be *only* a date. Moment format lets you put any free text inside square brackets `[]`. Some ways this might be useful in Obsidian is if you want to make your date into a link. You would specific a link like this (which is surrounding Obsidian's normal wikilink brackets with extra square brackets):
+You should note that this doesn't necessarily need to be *only* a date. Moment format lets you put any free text inside square brackets `[]`. Some ways this might be useful in Obsidian is if you want to make your date into a link. 
+
+#### Make the date into a link
+
+You would specific a link like this (which is surrounding Obsidian's normal wikilink brackets with extra square brackets):
 
 `[[[]YYYY-MM-DD[]]]`
 
