@@ -38,21 +38,23 @@ export default class FrontmatterModified extends Plugin {
        * The way I am doing this is probably a "bad" way. Anyone who knows the best practice
        * here, please let me know! It works just fine but perhaps there's a better way.
        */
-      this.registerDomEvent(document, 'keyup', ev => {
+      this.registerDomEvent(document, 'input', (event: InputEvent) => {
         // Check to see if the inputted key is a single, visible Unicode character.
         // This is to prevent matching arrow keys, etc. Using Unicode is necessary
         // to match on emoji and other 2-byte characters.
-        if (!ev.ctrlKey && !ev.altKey && !ev.metaKey && /^.$/u.test(ev.key)) {
-          try {
-            // Check to see if the typing event was in the editor DOM element
-            // @ts-ignore
-            if (ev.target.closest('.markdown-source-view .cm-editor')) {
-              // Find the active TFile inside the editor view
-              // @ts-ignore
-              this.updateFrontmatter(ev.view.app.workspace.activeEditor.file)
+        try {
+          if ((event?.target as HTMLElement)?.closest('.markdown-source-view > .cm-editor')) {
+            // Check to see if the inputted key is a single, visible Unicode character.
+            // This is to prevent matching arrow keys, etc. Using Unicode is necessary
+            // to match on emoji and other 2-byte characters.
+            if (/^.$/u.test(event.data || '')) {
+              const file = this.app.workspace.getActiveFile()
+              if (file instanceof TFile) {
+                this.updateFrontmatter(file).then()
+              }
             }
-          } catch (e) { }
-        }
+          }
+        } catch (e) {}
       })
     }
 
