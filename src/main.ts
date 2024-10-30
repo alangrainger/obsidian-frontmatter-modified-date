@@ -147,7 +147,7 @@ export default class FrontmatterModified extends Plugin {
             frontmatter[this.settings.frontmatterProperty] = newEntry
 
             // Create a created date field if requested
-            if (this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
+            if (!this.settings.onlyUpdateExisting && this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
               frontmatter[this.settings.createdDateProperty] = moment(file.stat.ctime).format(this.settings.momentFormat)
             }
           })
