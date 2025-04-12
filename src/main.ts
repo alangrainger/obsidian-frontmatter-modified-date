@@ -1,7 +1,7 @@
 import { Plugin, TFile, moment } from 'obsidian'
 import { DEFAULT_SETTINGS, FrontmatterModifiedSettings, FrontmatterModifiedSettingTab } from './settings'
 
-type DateFormat = string | number
+type StringOrInteger = string | number
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
@@ -119,7 +119,7 @@ export default class FrontmatterModified extends Plugin {
         }
 
         if (secondsSinceLastUpdate > 30) {
-          let newEntry: DateFormat | DateFormat[] = this.frontmatterDateFormat(now)
+          let newEntry: StringOrInteger | StringOrInteger[] = this.formatFrontmatterDate(now)
 
           if (isAppendArray) {
             let entries = cache?.frontmatter?.[this.settings.frontmatterProperty] || []
@@ -150,7 +150,7 @@ export default class FrontmatterModified extends Plugin {
 
             // Create a created date field if requested
             if (!this.settings.onlyUpdateExisting && this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
-              frontmatter[this.settings.createdDateProperty] = this.frontmatterDateFormat(moment(file.stat.ctime))
+              frontmatter[this.settings.createdDateProperty] = this.formatFrontmatterDate(moment(file.stat.ctime))
             }
           })
         }
@@ -158,9 +158,15 @@ export default class FrontmatterModified extends Plugin {
     }, this.settings.timeout * 1000)
   }
 
-  frontmatterDateFormat (date: moment.Moment): DateFormat {
+  /**
+   * Outputs the date in the user's specified MomentJS format.
+   * If that format evalutes to an integer it will return an integer,
+   * otherwise a string.
+   */
+  formatFrontmatterDate (date: moment.Moment): string | number {
     const output = date.format(this.settings.momentFormat)
     if (output.match(/^\d+$/)) {
+      // The date is numeric/integer format
       return parseInt(output, 10)
     } else {
       return output
