@@ -1,8 +1,6 @@
 import { Plugin, TFile, moment } from 'obsidian'
 import { DEFAULT_SETTINGS, FrontmatterModifiedSettings, FrontmatterModifiedSettingTab } from './settings'
 
-type StringOrInteger = string | number
-
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
   timer: { [key: string]: number } = {}
@@ -119,6 +117,7 @@ export default class FrontmatterModified extends Plugin {
         }
 
         if (secondsSinceLastUpdate > 30) {
+          type StringOrInteger = string | number
           let newEntry: StringOrInteger | StringOrInteger[] = this.formatFrontmatterDate(now)
 
           if (isAppendArray) {
