@@ -1,6 +1,8 @@
 import { Plugin, TFile, moment } from 'obsidian'
 import { DEFAULT_SETTINGS, FrontmatterModifiedSettings, FrontmatterModifiedSettingTab } from './settings'
 
+type DateFormat = string | number
+
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
   timer: { [key: string]: number } = {}
@@ -117,7 +119,7 @@ export default class FrontmatterModified extends Plugin {
         }
 
         if (secondsSinceLastUpdate > 30) {
-          let newEntry: string | string[] = now.format(this.settings.momentFormat)
+          let newEntry: DateFormat | DateFormat[] = this.frontmatterDateFormat(now)
 
           if (isAppendArray) {
             let entries = cache?.frontmatter?.[this.settings.frontmatterProperty] || []
@@ -148,11 +150,20 @@ export default class FrontmatterModified extends Plugin {
 
             // Create a created date field if requested
             if (!this.settings.onlyUpdateExisting && this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
-              frontmatter[this.settings.createdDateProperty] = moment(file.stat.ctime).format(this.settings.momentFormat)
+              frontmatter[this.settings.createdDateProperty] = this.frontmatterDateFormat(moment(file.stat.ctime))
             }
           })
         }
       }
     }, this.settings.timeout * 1000)
+  }
+
+  frontmatterDateFormat (date: moment.Moment): DateFormat {
+    const output = date.format(this.settings.momentFormat)
+    if (output.match(/^\d+$/)) {
+      return parseInt(output, 10)
+    } else {
+      return output
+    }
   }
 }
