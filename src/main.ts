@@ -38,27 +38,37 @@ export default class FrontmatterModified extends Plugin {
        * The way I am doing this is probably a "bad" way. Anyone who knows the best practice
        * here, please let me know! It works just fine but perhaps there's a better way.
        */
+
+      // Watch for typing events
       this.registerDomEvent(document, 'input', (event: InputEvent) => {
         // Check to see if the inputted key is a single, visible Unicode character.
         // This is to prevent matching arrow keys, etc. Using Unicode is necessary
         // to match on emoji and other 2-byte characters.
-        try {
-          if ((event?.target as HTMLElement)?.closest('.markdown-source-view > .cm-editor')) {
-            // Check to see if the inputted key is a single, visible Unicode character.
-            // This is to prevent matching arrow keys, etc. Using Unicode is necessary
-            // to match on emoji and other 2-byte characters.
-            if (/^.$/u.test(event.data || '')) {
-              const file = this.app.workspace.getActiveFile()
-              if (file instanceof TFile) {
-                this.updateFrontmatter(file).then()
-              }
-            }
-          }
-        } catch (e) {}
+        if (/^.$/u.test(event.data || '')) {
+          this.handleTypingEvent(event)
+        }
       })
+      // Watch for clipboard paste
+      this.registerDomEvent(document, 'paste', (event: ClipboardEvent) => { this.handleTypingEvent(event) })
     }
 
     this.addSettingTab(new FrontmatterModifiedSettingTab(this.app, this))
+  }
+
+  /**
+   * Receive a typing event and initiate the frontmatter update process
+   */
+  handleTypingEvent (event: InputEvent | ClipboardEvent) {
+    try {
+      if ((event?.target as HTMLElement)?.closest('.markdown-source-view > .cm-editor')) {
+        const file = this.app.workspace.getActiveFile()
+        if (file instanceof TFile) {
+          this.updateFrontmatter(file).then()
+        }
+      }
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   async loadSettings () {
