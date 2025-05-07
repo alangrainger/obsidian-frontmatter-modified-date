@@ -15,6 +15,11 @@ export default class FrontmatterModified extends Plugin {
        *
        * For users who experience issues due to external programs modifying their files,
        * they can use the special 'useKeyupEvents' mode below.
+       *
+       * The reason for using workspace.on('editor-change') rather than vault.on('modify')
+       * is that vault.modify triggers when the file timestamp is updated. This means that
+       * many sync clients will cause all files to trigger as if they'd been updated,
+       * when no actual changes were made to the file.
        */
       this.registerEvent(this.app.workspace.on('editor-change', (_editor, info) => {
         if (info.file instanceof TFile) {
@@ -103,11 +108,7 @@ export default class FrontmatterModified extends Plugin {
 
       } else {
         // Update the modified date field
-        //
-        // We will only update if it's been at least 30 seconds since the last recorded time. We do this
-        // as a preventative measure against a race condition where two devices have the same note open
-        // and are both syncing and updating each other.
-        // Are we appending to an array of entries?
+
         const now = moment()
         const isAppendArray = this.settings.storeHistoryLog || cache?.frontmatter?.[this.settings.appendField] === true
         const desc = this.settings.historyNewestFirst
@@ -126,6 +127,10 @@ export default class FrontmatterModified extends Plugin {
           }
         }
 
+        // We will only update if it's been at least 30 seconds since the last recorded time. We do this
+        // as a preventative measure against a race condition where two devices have the same note open
+        // and are both syncing and updating each other.
+        // Are we appending to an array of entries?
         if (secondsSinceLastUpdate > 30) {
           type StringOrInteger = string | number
           let newEntry: StringOrInteger | StringOrInteger[] = this.formatFrontmatterDate(now)
