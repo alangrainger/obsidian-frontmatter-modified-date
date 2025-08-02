@@ -139,7 +139,7 @@ export default class FrontmatterModified extends Plugin {
         // as a preventative measure against a race condition where two devices have the same note open
         // and are both syncing and updating each other.
         // Are we appending to an array of entries?
-        if (secondsSinceLastUpdate > 3) {
+        if (secondsSinceLastUpdate > 30) {
           type StringOrInteger = string | number
           let newEntry: StringOrInteger | StringOrInteger[] = this.formatFrontmatterDate(now)
 
