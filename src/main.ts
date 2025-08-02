@@ -1,5 +1,6 @@
 import { Plugin, TFile, moment } from 'obsidian'
 import { DEFAULT_SETTINGS, FrontmatterModifiedSettings, FrontmatterModifiedSettingTab } from './settings'
+import { userChangeListenerExtension } from './editor'
 
 export default class FrontmatterModified extends Plugin {
   settings: FrontmatterModifiedSettings
@@ -7,6 +8,9 @@ export default class FrontmatterModified extends Plugin {
 
   async onload () {
     await this.loadSettings()
+
+    // The extension will run in the special mode only.
+    this.registerEditorExtension(userChangeListenerExtension(this))
 
     if (!this.settings.useKeyupEvents) {
       /*
@@ -27,6 +31,8 @@ export default class FrontmatterModified extends Plugin {
         }
       }))
     } else if (this.settings.useKeyupEvents) {
+      // Do nothing, replaced by 'userChangeListenerExtension'
+
       /*
        * This is a special mode for users who can't rely on Obsidian detecting file changes.
        * Both of these built-in events fire when a file is externally modified:
@@ -44,6 +50,7 @@ export default class FrontmatterModified extends Plugin {
        * here, please let me know! It works just fine but perhaps there's a better way.
        */
 
+      /*
       // Watch for typing events
       this.registerDomEvent(document, 'input', (event: InputEvent) => {
         // Check to see if the inputted key is a single, visible Unicode character.
@@ -55,6 +62,7 @@ export default class FrontmatterModified extends Plugin {
       })
       // Watch for clipboard paste
       this.registerDomEvent(document, 'paste', (event: ClipboardEvent) => { this.handleTypingEvent(event) })
+      */
     }
 
     this.addSettingTab(new FrontmatterModifiedSettingTab(this.app, this))
@@ -131,7 +139,7 @@ export default class FrontmatterModified extends Plugin {
         // as a preventative measure against a race condition where two devices have the same note open
         // and are both syncing and updating each other.
         // Are we appending to an array of entries?
-        if (secondsSinceLastUpdate > 30) {
+        if (secondsSinceLastUpdate > 3) {
           type StringOrInteger = string | number
           let newEntry: StringOrInteger | StringOrInteger[] = this.formatFrontmatterDate(now)
 
