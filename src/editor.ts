@@ -1,6 +1,9 @@
-import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import { editorInfoField, TFile } from 'obsidian';
-import FrontmatterModified from 'main';
+// The CodeMirror solution was helpfully provided by @kotaindah55 in
+// https://github.com/alangrainger/obsidian-frontmatter-modified-date/pull/60
+
+import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { editorInfoField, TFile } from 'obsidian'
+import FrontmatterModified from 'main'
 
 /**
  * `UserChangeListener` wrapper, should be registered through `plugin.registerEditorExtension()`
@@ -11,11 +14,11 @@ export const userChangeListenerExtension = (plugin: FrontmatterModified) => View
 
 /**
  * Watch for any explicit user change and update the timestamp when found.
- * 
+ *
  * Therefore, any external change and the change that happens without explicit user interaction,
- * e.g multiple editors holding the same note while some of them have a change made by another editor,
+ * e.g. multiple editors holding the same note while some of them have a change made by another editor,
  * will be ignored.
- * 
+ *
  * Only works if `useKeyupEvents` is set to `true`.
  */
 class UserChangeListener implements PluginValue {
@@ -33,7 +36,7 @@ class UserChangeListener implements PluginValue {
     }
 
     if (isUserChange(update)) {
-      this.plugin.updateFrontmatter(this.file)
+      this.plugin.updateFrontmatter(this.file).then()
     }
   }
 }

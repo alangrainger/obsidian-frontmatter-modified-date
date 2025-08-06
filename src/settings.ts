@@ -169,8 +169,7 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 will register this as a modification and update the frontmatter. If you don't want this to happen, and only
 want the frontmatter when you are making changes inside Obsidian, you can try this mode. It watches for typing 
 events, and then updates the frontmatter only when you type. This means that some events like updating your note 
-or properties using your mouse will not cause the modified field to update. You will need to restart Obsidian 
-after this change.`)
+or properties using your mouse will not cause the modified field to update.`)
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.useKeyupEvents)
