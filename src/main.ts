@@ -121,8 +121,15 @@ export default class FrontmatterModified extends Plugin {
             // Update the modified date field
             frontmatter[this.settings.frontmatterProperty] = newEntry
 
-            // Create a created date field if requested or update created date field if date is null
-            if (!this.settings.onlyUpdateExisting && this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty] || frontmatter[this.settings.createdDateProperty] === null) {
+            // Add the created date if requested
+            if (
+              this.settings.createdDateProperty &&
+              (
+                (!this.settings.onlyUpdateExisting && !frontmatter[this.settings.createdDateProperty])
+                ||
+                (this.settings.onlyUpdateExisting && frontmatter[this.settings.createdDateProperty] === null)
+              )
+            ) {
               frontmatter[this.settings.createdDateProperty] = this.formatFrontmatterDate(moment(file.stat.ctime || now))
             }
           })
