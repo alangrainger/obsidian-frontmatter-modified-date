@@ -8,6 +8,7 @@ export default class FrontmatterModified extends Plugin {
 
   async onload () {
     await this.loadSettings()
+    this.setLocale()
 
     // The extension will run in the typing-events mode only
     this.registerEditorExtension(userChangeListenerExtension(this))
@@ -150,6 +151,17 @@ export default class FrontmatterModified extends Plugin {
       return parseInt(output, 10)
     } else {
       return output
+    }
+  }
+
+  /**
+   * Set MomentJS locale if specified
+   */
+  setLocale () {
+    if (this.settings.momentLocale) {
+      try {
+        moment.locale(this.settings.momentLocale)
+      } catch (_) {}
     }
   }
 }

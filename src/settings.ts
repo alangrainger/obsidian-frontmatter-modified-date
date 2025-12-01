@@ -1,12 +1,13 @@
 import { App, PluginSettingTab, Setting, TFolder } from 'obsidian'
 import FrontmatterModified from './main'
 import { unitOfTime } from 'moment'
-import { LabeledSuggestModal } from "suggesterFuzzy"
+import { LabeledSuggestModal } from 'suggesterFuzzy'
 
 export interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
   createdDateProperty: string;
   momentFormat: string;
+  momentLocale: string;
   storeHistoryLog: boolean;
   historyNewestFirst: boolean;
   historyMaxItems: number;
@@ -19,14 +20,11 @@ export interface FrontmatterModifiedSettings {
   appendMaximumFrequency: unitOfTime.StartOf;
 }
 
-// export interface Folder {
-//   name: string;
-//   path: string;
-// }
 export const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
   frontmatterProperty: 'modified',
   createdDateProperty: '',
   momentFormat: '',
+  momentLocale: '',
   storeHistoryLog: false,
   historyNewestFirst: false,
   historyMaxItems: 0,
@@ -86,6 +84,21 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
           this.plugin.settings.momentFormat = value
           await this.plugin.saveSettings()
         }))
+    new Setting(containerEl)
+      .setName('Date locale')
+      .setDesc('Specify a locale format for MomentJS to use. Available locales are here: ')
+      .addText(text => text
+        .setPlaceholder('en')
+        .setValue(this.plugin.settings.momentLocale)
+        .onChange(async value => {
+          this.plugin.settings.momentLocale = value
+          await this.plugin.saveSettings()
+          this.plugin.setLocale()
+       }))
+      .descEl.appendChild(createEl('a', {
+      text: 'MomentJS locales',
+      href: 'https://github.com/moment/moment/tree/develop/locale'
+    }))
 
     // Store history as list or single value
     new Setting(containerEl)
@@ -147,51 +160,56 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
     for (let [index, folders] of this.plugin.settings.excludedFolders.entries()) {
 
       const f = new Setting(containerEl)
-        .setName("Excluded folder")
-        f.addText((text) =>
-          text
+        .setName('Excluded folder')
+      f.addText((text) =>
+        text
           .setPlaceholder('Exclude folder')
           .setValue(this.plugin.settings.excludedFolders[index])
           .onChange(async (value) => {
-            this.plugin.settings.excludedFolders[index] = value;
-            await this.plugin.saveSettings();
+            this.plugin.settings.excludedFolders[index] = value
+            await this.plugin.saveSettings()
           })
-        );
+      )
 
       // Folder delete button
       f.addButton((el) =>
         el
-          .setButtonText(`Delete `).setIcon("trash")
+          .setButtonText(`Delete `).setIcon('trash')
           .onClick(async () => {
-            this.plugin.settings.excludedFolders.splice(index, 1);
-            await this.plugin.saveSettings();
-            this.display();
+            this.plugin.settings.excludedFolders.splice(index, 1)
+            await this.plugin.saveSettings()
+            this.display()
           })
-        );
-      };
+      )
+    }
 
     // Folder add button
     new Setting(this.containerEl)
-      .setName("Add excluded folder")
-      .setDesc("Click the plus folder button to add a folder to exclude")
+      .setName('Add excluded folder')
+      .setDesc('Click the plus folder button to add a folder to exclude')
       .addButton((el) =>
-        el.setButtonText("Add Folder").setIcon('folder-plus').onClick(async () => {
-          let allFolders = [];
-          let allFoldersStr = [];
-          let result = this.app.vault.getAllLoadedFiles().filter((file) => file instanceof TFolder);
+        el.setButtonText('Add Folder').setIcon('folder-plus').onClick(async () => {
+          let allFolders = []
+          let allFoldersStr = []
+          let result = this.app.vault.getAllLoadedFiles().filter((file) => file instanceof TFolder)
           for (let i = 0; i < result.length; i++) {
-            if (result[i].name !== "") {
-              allFolders.push({name: `${result[i].name}`, path: `${result[i].path}`});
-              allFoldersStr.push(result[i].path);
-            };
-          };
+            if (result[i].name !== '') {
+              allFolders.push({
+                name: `${result[i].name}`,
+                path: `${result[i].path}`
+              })
+              allFoldersStr.push(result[i].path)
+            }
+
+          }
+
           // Get folder selection from user
-          let returnedFolderObj = await LabeledSuggestModal.open(allFolders, allFoldersStr, "Select folder to exclude");
-          this.plugin.settings.excludedFolders.push(returnedFolderObj.name);
-          await this.plugin.saveSettings();
-          this.display(); // Update settings display
+          let returnedFolderObj = await LabeledSuggestModal.open(allFolders, allFoldersStr, 'Select folder to exclude')
+          this.plugin.settings.excludedFolders.push(returnedFolderObj.name)
+          await this.plugin.saveSettings()
+          this.display() // Update settings display
         })
-      );
+      )
 
     // Update existing fields toggle
     new Setting(containerEl)
