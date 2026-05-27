@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import FrontmatterModified from './main'
-import { unitOfTime } from 'moment'
+
+type StartOfUnit = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 export interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
@@ -16,7 +17,7 @@ export interface FrontmatterModifiedSettings {
   timeout: number;
   excludeField: string;
   appendField: string;
-  appendMaximumFrequency: unitOfTime.StartOf;
+  appendMaximumFrequency: StartOfUnit;
 }
 
 export const DEFAULT_SETTINGS: FrontmatterModifiedSettings = {
@@ -54,7 +55,7 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
       .setName('Modified date property')
       .setDesc('The name of the YAML/frontmatter property to update when your note is modified')
       .addText(text => text
-        .setPlaceholder('modified')
+        .setPlaceholder('Modified')
         .setValue(this.plugin.settings.frontmatterProperty)
         .onChange(async value => {
           this.plugin.settings.frontmatterProperty = value
@@ -65,7 +66,7 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
       .setName('Created date property (optional)')
       .setDesc('Optional. Add a created property name, and the plugin will also update the note creation date.')
       .addText(text => text
-        .setPlaceholder('created')
+        .setPlaceholder('Created')
         .setValue(this.plugin.settings.createdDateProperty)
         .onChange(async value => {
           this.plugin.settings.createdDateProperty = value
@@ -75,9 +76,9 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
     // Date format setting
     new Setting(containerEl)
       .setName('Date format')
-      .setDesc('This is in MomentJS format. Leave blank for the default ATOM format.')
+      .setDesc('This is in momentjs format. Leave blank for the default atom format.')
       .addText(text => text
-        .setPlaceholder('ATOM format')
+        .setPlaceholder('Atom format')
         .setValue(this.plugin.settings.momentFormat)
         .onChange(async value => {
           this.plugin.settings.momentFormat = value
@@ -118,11 +119,11 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
         .setDesc('The plugin will store a maximum of 1 history entry per minute, hour, day, etc. If there are multiple edits in the specified period, the last edit entry will be updated instead.')
         .addDropdown(dropdown => {
           ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year']
-            .forEach(unit => dropdown.addOption(unit, unit))
+            .forEach(unit => { dropdown.addOption(unit, unit) })
           dropdown
             .setValue(this.plugin.settings.appendMaximumFrequency || '')
             .onChange(async (value) => {
-              this.plugin.settings.appendMaximumFrequency = value as unitOfTime.StartOf
+              this.plugin.settings.appendMaximumFrequency = value as StartOfUnit
               await this.plugin.saveSettings()
             })
         })
@@ -150,10 +151,6 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings()
           }))
     }
-
-    new Setting(containerEl)
-      .setName('Vault options')
-      .setHeading()
 
     // Exclude folders
     new Setting(containerEl)
@@ -199,7 +196,7 @@ or properties using your mouse will not cause the modified field to update.`)
     // Typing timeout
     new Setting(containerEl)
       .setName('Timeout (seconds)')
-      .setDesc('How many seconds to wait after the last edit before updating the modified field. You can increase this value if you are experiencing too many "Merging changes" popups.')
+      .setDesc('How many seconds to wait after the last edit before updating the modified field. You can increase this value if you are experiencing too many "merging changes" popups.')
       .addText(text => text
         .setPlaceholder('10')
         .setValue(this.plugin.settings.timeout.toString())
