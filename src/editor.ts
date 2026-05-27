@@ -36,7 +36,7 @@ class UserChangeListener implements PluginValue {
     }
 
     if (isUserChange(update)) {
-      this.plugin.updateFrontmatter(this.file).then()
+      void this.plugin.updateFrontmatter(this.file)
     }
   }
 }

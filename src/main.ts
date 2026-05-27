@@ -28,7 +28,7 @@ export default class FrontmatterModified extends Plugin {
        */
       this.registerEvent(this.app.workspace.on('editor-change', (_editor, info) => {
         if (info.file instanceof TFile) {
-          this.updateFrontmatter(info.file)
+          void this.updateFrontmatter(info.file)
         }
       }))
     }
@@ -54,10 +54,10 @@ export default class FrontmatterModified extends Plugin {
    * @param {TFile} file
    */
   async updateFrontmatter (file: TFile) {
-    clearTimeout(this.timer[file.path])
+    window.clearTimeout(this.timer[file.path])
     this.timer[file.path] = window.setTimeout(() => {
       const cache = this.app.metadataCache.getFileCache(file)
-      if (this.settings.onlyUpdateExisting && !cache?.frontmatter?.hasOwnProperty(this.settings.frontmatterProperty)) {
+      if (this.settings.onlyUpdateExisting && !Object.hasOwn(cache?.frontmatter ?? {}, this.settings.frontmatterProperty)) {
         // The user has chosen to only update the frontmatter property IF it already exists
 
       } else if (cache?.frontmatter?.[this.settings.excludeField]) {
@@ -118,7 +118,7 @@ export default class FrontmatterModified extends Plugin {
           }
 
           // Update the frontmatter
-          this.app.fileManager.processFrontMatter(file, frontmatter => {
+          void this.app.fileManager.processFrontMatter(file, frontmatter => {
             // Update the modified date field
             frontmatter[this.settings.frontmatterProperty] = newEntry
 

@@ -86,9 +86,9 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
         }))
     new Setting(containerEl)
       .setName('Date locale')
-      .setDesc('Specify a locale format for MomentJS to use. Available locales are here: ')
+      .setDesc('Specify a locale format for momentjs to use. Available locales are here: ')
       .addText(text => text
-        .setPlaceholder('en')
+        .setPlaceholder('En')
         .setValue(this.plugin.settings.momentLocale)
         .onChange(async value => {
           this.plugin.settings.momentLocale = value
@@ -96,9 +96,9 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
           this.plugin.setLocale()
         }))
       .descEl.appendChild(createEl('a', {
-      text: 'MomentJS locales',
-      href: 'https://github.com/moment/moment/tree/develop/locale'
-    }))
+        text: 'Momentjs locales',
+        href: 'https://github.com/moment/moment/tree/develop/locale'
+      }))
 
     // Store history as list or single value
     new Setting(containerEl)
