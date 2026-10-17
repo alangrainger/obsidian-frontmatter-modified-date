@@ -1,4 +1,4 @@
-import { Plugin, TFile, moment } from 'obsidian'
+import { MarkdownView, Plugin, TFile, moment } from 'obsidian'
 import { DEFAULT_SETTINGS, FrontmatterModifiedSettings, FrontmatterModifiedSettingTab } from './settings'
 import { userChangeListenerExtension } from './editor'
 
@@ -117,8 +117,8 @@ export default class FrontmatterModified extends Plugin {
             newEntry = entries
           }
 
-          // Update the frontmatter
-          void this.app.fileManager.processFrontMatter(file, frontmatter => {
+          // Update the frontmatter. Flush pending editor changes first, see saveOpenViews()
+          void this.saveOpenViews(file).then(() => this.app.fileManager.processFrontMatter(file, frontmatter => {
             // Update the modified date field
             frontmatter[this.settings.frontmatterProperty] = newEntry
 
@@ -126,10 +126,28 @@ export default class FrontmatterModified extends Plugin {
             if (!this.settings.onlyUpdateExisting && this.settings.createdDateProperty && !frontmatter[this.settings.createdDateProperty]) {
               frontmatter[this.settings.createdDateProperty] = this.formatFrontmatterDate(moment(file.stat.ctime || now))
             }
-          })
+          }))
         }
       }
     }, this.settings.timeout * 1000)
+  }
+
+  /**
+   * Write unsaved editor content of this file to disk.
+   *
+   * processFrontMatter() rewrites the file as it is on disk. Obsidian saves editor changes
+   * with a delay, so if the timeout is shorter than that delay, the editor can hold content
+   * that is not on disk yet. Without saving first, that content is lost - e.g. when pasting
+   * into a new note, whose frontmatter does not exist yet (issue #72).
+   */
+  async saveOpenViews (file: TFile) {
+    const saves: Promise<void>[] = []
+    this.app.workspace.iterateAllLeaves(leaf => {
+      if (leaf.view instanceof MarkdownView && leaf.view.file === file) {
+        saves.push(leaf.view.save())
+      }
+    })
+    await Promise.all(saves)
   }
 
   /**
