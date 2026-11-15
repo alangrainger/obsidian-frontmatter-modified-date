@@ -9,6 +9,7 @@ export default [
       'main.js',
       'node_modules/**',
       'esbuild.config.mjs',
+      'scripts/test-i18n.cjs',
       'version-bump.mjs',
       'eslint.config.mjs',
       'data.json',

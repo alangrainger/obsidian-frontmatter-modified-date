@@ -1,4 +1,4 @@
-import { moment } from 'obsidian'
+import * as obsidian from 'obsidian'
 
 const en = {
   modifiedDateProperty: 'Modified date property',
@@ -65,7 +65,7 @@ const zh = {
   onlyExisting: '仅更新已有字段',
   onlyExistingDesc: '开启后，仅在 frontmatter 字段*已经存在*时才更新该字段。',
   typingEvents: '使用输入事件代替 Obsidian 事件',
-  typingEventsDesc: `如果使用外部编辑器修改文件且 Obsidian 当前处于打开状态，Obsidian 会将其记录为修改并更新 frontmatter。如果不希望这样，而只想在 Obsidian 内编辑时更新 frontmatter，可以尝试此模式。它会监听输入事件，只在输入时更新 frontmatter。因此，使用鼠标更新笔记或属性等操作不会触发修改字段更新。`,
+  typingEventsDesc: '如果使用外部编辑器修改文件且 Obsidian 当前处于打开状态，Obsidian 会将其记录为修改并更新 frontmatter。如果不希望这样，而只想在 Obsidian 内编辑时更新 frontmatter，可以尝试此模式。它会监听输入事件，只在输入时更新 frontmatter。因此，使用鼠标更新笔记或属性等操作不会触发修改字段更新。',
   timeout: '超时（秒）',
   timeoutDesc: '最后一次编辑后等待多少秒再更新修改日期字段。如果经常出现“合并更改”弹窗，可以增大此值。',
   storeHistoryDesc: (property: string) => `不只保存最后一次修改时间，而是将 "${property}" frontmatter 属性保存为此笔记所有编辑日期/时间的列表。`
@@ -74,7 +74,18 @@ const zh = {
 type TranslationKey = keyof typeof en
 
 function normalizedLanguage (): 'en' | 'zh' {
-  const locale = (moment.locale() || 'en').toLowerCase().replace('_', '-')
+  // Older Obsidian releases do not expose getLanguage(). Use the UI setting,
+  // never Moment's locale, which the date settings can change independently.
+  let language = (obsidian as { getLanguage?: () => string }).getLanguage?.()
+  if (!language) {
+    try {
+      // eslint-disable-next-line obsidianmd/prefer-get-language -- Compatibility fallback when getLanguage is unavailable.
+      language = window.localStorage.getItem('language') ?? 'en'
+    } catch {
+      language = 'en'
+    }
+  }
+  const locale = language.toLowerCase().replace('_', '-')
   return locale === 'zh' || locale.startsWith('zh-') ? 'zh' : 'en'
 }
 
