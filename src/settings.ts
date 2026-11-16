@@ -1,7 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
+import { StartOfUnit, storeHistoryDesc, t, unitLabel } from './i18n'
 import FrontmatterModified from './main'
-
-type StartOfUnit = 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 export interface FrontmatterModifiedSettings {
   frontmatterProperty: string;
@@ -52,10 +51,10 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Modified date property
     new Setting(containerEl)
-      .setName('Modified date property')
-      .setDesc('The name of the YAML/frontmatter property to update when your note is modified')
+      .setName(t('modifiedDateProperty'))
+      .setDesc(t('modifiedDatePropertyDesc'))
       .addText(text => text
-        .setPlaceholder('Modified')
+        .setPlaceholder(t('modified'))
         .setValue(this.plugin.settings.frontmatterProperty)
         .onChange(async value => {
           this.plugin.settings.frontmatterProperty = value
@@ -63,10 +62,10 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
         }))
     // Created date property
     new Setting(containerEl)
-      .setName('Created date property (optional)')
-      .setDesc('Optional. Add a created property name, and the plugin will also update the note creation date.')
+      .setName(t('createdDateProperty'))
+      .setDesc(t('createdDatePropertyDesc'))
       .addText(text => text
-        .setPlaceholder('Created')
+        .setPlaceholder(t('created'))
         .setValue(this.plugin.settings.createdDateProperty)
         .onChange(async value => {
           this.plugin.settings.createdDateProperty = value
@@ -75,18 +74,18 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Date format setting
     new Setting(containerEl)
-      .setName('Date format')
-      .setDesc('This is in momentjs format. Leave blank for the default atom format.')
+      .setName(t('dateFormat'))
+      .setDesc(t('dateFormatDesc'))
       .addText(text => text
-        .setPlaceholder('Atom format')
+        .setPlaceholder(t('atomFormat'))
         .setValue(this.plugin.settings.momentFormat)
         .onChange(async value => {
           this.plugin.settings.momentFormat = value
           await this.plugin.saveSettings()
         }))
     new Setting(containerEl)
-      .setName('Date locale')
-      .setDesc('Specify a locale format for momentjs to use. Available locales are here: ')
+      .setName(t('dateLocale'))
+      .setDesc(t('dateLocaleDesc'))
       .addText(text => text
         .setPlaceholder('En')
         .setValue(this.plugin.settings.momentLocale)
@@ -96,14 +95,14 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
           this.plugin.setLocale()
         }))
       .descEl.appendChild(createEl('a', {
-        text: 'Momentjs locales',
+        text: t('momentjsLocales'),
         href: 'https://github.com/moment/moment/tree/develop/locale'
       }))
 
     // Store history as list or single value
     new Setting(containerEl)
-      .setName('Store history of all updates')
-      .setDesc(`Instead of storing only the last modified time, this will turn your "${this.plugin.settings.frontmatterProperty}" frontmatter property into a list of all of the dates/times you've edited this note.`)
+      .setName(t('storeHistory'))
+      .setDesc(storeHistoryDesc(this.plugin.settings.frontmatterProperty))
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.storeHistoryLog)
@@ -115,11 +114,11 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
       })
     if (this.plugin.settings.storeHistoryLog) {
       new Setting(containerEl)
-        .setName('Frequency of updates')
-        .setDesc('The plugin will store a maximum of 1 history entry per minute, hour, day, etc. If there are multiple edits in the specified period, the last edit entry will be updated instead.')
+        .setName(t('updateFrequency'))
+        .setDesc(t('updateFrequencyDesc'))
         .addDropdown(dropdown => {
           ['minute', 'hour', 'day', 'week', 'month', 'quarter', 'year']
-            .forEach(unit => { dropdown.addOption(unit, unit) })
+            .forEach(unit => { dropdown.addOption(unit, unitLabel(unit)) })
           dropdown
             .setValue(this.plugin.settings.appendMaximumFrequency || '')
             .onChange(async (value) => {
@@ -128,10 +127,10 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
             })
         })
       new Setting(containerEl)
-        .setName('Order to store the history items')
+        .setName(t('historyOrder'))
         .addDropdown(dropdown => {
-          dropdown.addOption('newest', 'Newest item at start of list')
-          dropdown.addOption('oldest', 'Oldest item at start of list')
+          dropdown.addOption('newest', t('newestFirst'))
+          dropdown.addOption('oldest', t('oldestFirst'))
           dropdown
             .setValue(this.plugin.settings.historyNewestFirst ? 'newest' : 'oldest')
             .onChange(async (value) => {
@@ -140,10 +139,10 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
             })
         })
       new Setting(containerEl)
-        .setName('Maximum number of history items')
-        .setDesc('Leave blank or zero for unlimited history items.')
+        .setName(t('maxHistory'))
+        .setDesc(t('maxHistoryDesc'))
         .addText(text => text
-          .setPlaceholder('Unlimited')
+          .setPlaceholder(t('unlimited'))
           .setValue(this.plugin.settings.historyMaxItems === 0 ? '' : this.plugin.settings.historyMaxItems.toString())
           .onChange(async value => {
             const num = parseInt(value, 10)
@@ -154,8 +153,8 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Exclude folders
     new Setting(containerEl)
-      .setName('Exclude folders')
-      .setDesc('Add a list of folders to exclude, one folder per line. All subfolders will be also excluded.')
+      .setName(t('excludeFolders'))
+      .setDesc(t('excludeFoldersDesc'))
       .addTextArea(text => text
         .setValue(this.plugin.settings.excludedFolders.join('\n'))
         .onChange(async value => {
@@ -165,8 +164,8 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Update existing fields toggle
     new Setting(containerEl)
-      .setName('Only update existing fields')
-      .setDesc('If you turn this on, it will only update a frontmatter field *if that field already exists*.')
+      .setName(t('onlyExisting'))
+      .setDesc(t('onlyExistingDesc'))
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.onlyUpdateExisting)
@@ -178,12 +177,8 @@ export class FrontmatterModifiedSettingTab extends PluginSettingTab {
 
     // Use typing events toggle
     new Setting(containerEl)
-      .setName('Use typing events instead of Obsidian events')
-      .setDesc(`If you make changes to a file using an external editor and Obsidian is currently open, Obsidian
-will register this as a modification and update the frontmatter. If you don't want this to happen, and only
-want the frontmatter when you are making changes inside Obsidian, you can try this mode. It watches for typing 
-events, and then updates the frontmatter only when you type. This means that some events like updating your note 
-or properties using your mouse will not cause the modified field to update.`)
+      .setName(t('typingEvents'))
+      .setDesc(t('typingEventsDesc'))
       .addToggle(toggle => {
         toggle
           .setValue(this.plugin.settings.useKeyupEvents)
@@ -195,8 +190,8 @@ or properties using your mouse will not cause the modified field to update.`)
 
     // Typing timeout
     new Setting(containerEl)
-      .setName('Timeout (seconds)')
-      .setDesc('How many seconds to wait after the last edit before updating the modified field. You can increase this value if you are experiencing too many "merging changes" popups.')
+      .setName(t('timeout'))
+      .setDesc(t('timeoutDesc'))
       .addText(text => text
         .setPlaceholder('10')
         .setValue(this.plugin.settings.timeout.toString())
